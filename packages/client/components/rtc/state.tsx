@@ -28,7 +28,7 @@ import {
 } from "livekit-client";
 import { Channel } from "stoat.js";
 
-import { SoundController, useSound } from "@revolt/client";
+import { SoundController, useClient, useSound } from "@revolt/client";
 import { useInstance } from "@revolt/instance";
 import { ModalController, useModals } from "@revolt/modal";
 import { useState } from "@revolt/state";
@@ -43,7 +43,9 @@ import { Device, useDevice } from "@revolt/common";
 import { type ScreenShareCodec, recommendCodec } from "./codecPick";
 import { InRoom } from "./components/InRoom";
 import { RoomAudioManager } from "./components/RoomAudioManager";
+import { SoundboardPlayer } from "./components/SoundboardPlayer";
 import { probeEncoders, screenSize } from "./encoders";
+import { playSound } from "./soundboard";
 import { VoiceProcessor } from "./VoiceProcessor";
 
 type State =
@@ -65,6 +67,7 @@ type ScreenShareQuality = Required<
 
 class Voice {
   #settings: VoiceSettings;
+  #client: ReturnType<typeof useClient>;
 
   channel: Accessor<Channel | undefined>;
   #setChannel: Setter<Channel | undefined>;
@@ -152,6 +155,7 @@ class Voice {
     this.#setShowBar = setShowBar;
 
     const inst = useInstance();
+    this.#client = useClient();
     this.config = inst.config;
     this.limits = inst.limits;
     this.openModal = modals.openModal;
@@ -261,6 +265,7 @@ class Voice {
 
     room.addListener("connected", () => {
       this.#setState("CONNECTED");
+      void this.#playEntranceSound(channel);
       if (this.speakingPermission)
         room.localParticipant
           .setMicrophoneEnabled(this.#settings.micOn)
@@ -323,7 +328,8 @@ class Voice {
     // Gather latency
     const selected = await Promise.any(
       this.config.features.livekit.nodes.map(async (node) => {
-        return fetch(node.public_url.replace("wss", "https")).then(() => {
+        // ws:// -> http://, wss:// -> https:// (plain replace("wss", ...) broke non-TLS setups)
+        return fetch(node.public_url.replace(/^ws/, "http")).then(() => {
           return node.name;
         });
       }),
@@ -431,6 +437,25 @@ class Voice {
       this.#setVideo(room.localParticipant.isCameraEnabled);
     } catch (e) {
       this.onErr(e);
+    }
+  }
+
+  /**
+   * Play our entrance sound when we join. The server learns we joined from a LiveKit webhook that
+   * can land after we're connected, so wait a moment and retry once if it says we're not there yet.
+   */
+  async #playEntranceSound(channel: Channel) {
+    const sound = this.#settings.entranceSound;
+    if (!sound) return;
+    for (const delay of [1000, 2000]) {
+      await new Promise((r) => setTimeout(r, delay));
+      if (this.channel()?.id !== channel.id) return;
+      try {
+        await playSound(this.#client(), channel.id, sound);
+        return;
+      } catch (e) {
+        if ((e as { type?: string }).type !== "NotConnected") return;
+      }
     }
   }
 
@@ -831,6 +856,7 @@ export function VoiceContext(props: { children: JSX.Element }) {
         <VoiceCallCardContext>{props.children}</VoiceCallCardContext>
         <InRoom>
           <RoomAudioManager />
+          <SoundboardPlayer />
         </InRoom>
       </RoomContext.Provider>
     </voiceContext.Provider>
