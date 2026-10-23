@@ -2,6 +2,8 @@ import { createSignal } from "solid-js";
 
 import type { Client } from "stoat.js";
 
+import { forkApi } from "@revolt/client/forkApi";
+
 /**
  * Soundboard sound, as returned by our fork's API (see NITRO.md; not part of the SDK)
  */
@@ -26,41 +28,15 @@ export type SoundboardPlayEvent = {
 /** Longest sound we accept, checked client-side before upload */
 export const MAX_SOUND_SECONDS = 10;
 
-/**
- * Call one of our routes; they aren't in the SDK's typed API
- */
-async function call<T>(
-  client: Client,
-  method: string,
-  path: string,
-  body?: unknown,
-): Promise<T> {
-  const [key, value] = client.authenticationHeader;
-  const res = await fetch(`${client.options.baseURL}${path}`, {
-    method,
-    headers: {
-      [key]: value,
-      ...(body === undefined ? {} : { "content-type": "application/json" }),
-    },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
-  if (!res.ok) {
-    throw await res
-      .json()
-      .catch(() => ({ type: "HttpError", status: res.status }));
-  }
-  return (res.status === 204 ? undefined : await res.json()) as T;
-}
-
 export const listSounds = (client: Client, serverId: string) =>
-  call<SoundboardSound[]>(client, "GET", `/servers/${serverId}/sounds`);
+  forkApi<SoundboardSound[]>(client, "GET", `/servers/${serverId}/sounds`);
 
 export const editSound = (
   client: Client,
   sound: SoundboardSound,
   data: { name?: string; volume?: number; emoji?: string },
 ) =>
-  call<SoundboardSound>(
+  forkApi<SoundboardSound>(
     client,
     "PATCH",
     `/servers/${sound.server_id}/sounds/${sound._id}`,
@@ -68,14 +44,18 @@ export const editSound = (
   );
 
 export const deleteSound = (client: Client, sound: SoundboardSound) =>
-  call<void>(
+  forkApi<void>(
     client,
     "DELETE",
     `/servers/${sound.server_id}/sounds/${sound._id}`,
   );
 
 export const playSound = (client: Client, channelId: string, soundId: string) =>
-  call<void>(client, "POST", `/channels/${channelId}/sounds/${soundId}/play`);
+  forkApi<void>(
+    client,
+    "POST",
+    `/channels/${channelId}/sounds/${soundId}/play`,
+  );
 
 /**
  * Upload an audio file to the `sounds` tag, then register it on the server
@@ -98,10 +78,15 @@ export async function createSound(
   if (!res.ok) throw await res.json();
   const { id } = (await res.json()) as { id: string };
 
-  return call<SoundboardSound>(client, "POST", `/servers/${serverId}/sounds`, {
-    file_id: id,
-    ...data,
-  });
+  return forkApi<SoundboardSound>(
+    client,
+    "POST",
+    `/servers/${serverId}/sounds`,
+    {
+      file_id: id,
+      ...data,
+    },
+  );
 }
 
 export const soundUrl = (mediaUrl: string, id: string) =>

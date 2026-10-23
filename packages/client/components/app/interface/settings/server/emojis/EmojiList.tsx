@@ -1,13 +1,15 @@
 import { createFormControl, createFormGroup } from "solid-forms";
-import { For, Match, Switch } from "solid-js";
+import { For, Match, Show, Switch } from "solid-js";
 
 import { Trans, useLingui } from "@lingui/solid/macro";
 import { Server } from "stoat.js";
 import { css } from "styled-system/css";
 
 import { useClient } from "@revolt/client";
+import { forkApi } from "@revolt/client/forkApi";
 import { useError } from "@revolt/i18n";
 import { useInstance } from "@revolt/instance";
+import { isSticker, setStickers } from "@revolt/markdown/emoji/stickers";
 import { useModals } from "@revolt/modal";
 import {
   Avatar,
@@ -29,8 +31,19 @@ export function EmojiList(props: { server: Server }) {
   const { openModal } = useModals();
   const instance = useInstance();
 
+  // stickers are custom emoji with a flag (fork); emoji and stickers have separate slots
+  const emojis = () => props.server.emojis.filter((e) => !isSticker(e.id));
+  const stickers = () => props.server.emojis.filter((e) => isSticker(e.id));
+  const maxStickers = () =>
+    (instance.globalLimits as unknown as Record<string, number>)
+      .server_stickers ?? 60;
+  const remaining = (sticker: boolean) =>
+    sticker
+      ? maxStickers() - stickers().length
+      : instance.globalLimits.server_emoji - emojis().length;
+
   function isDisabled() {
-    return props.server.emojis.length >= instance.globalLimits.server_emoji;
+    return remaining(false) <= 0 && remaining(true) <= 0;
   }
 
   const editGroup = createFormGroup(
@@ -39,6 +52,7 @@ export function EmojiList(props: { server: Server }) {
       file: createFormControl<string | File[] | null>(null, {
         required: true,
       }),
+      sticker: createFormControl(false),
     },
     {
       disabled: isDisabled(),
@@ -58,14 +72,25 @@ export function EmojiList(props: { server: Server }) {
       },
     }).then((res) => res.json());
 
-    await props.server.createEmoji(data.id, {
-      name: editGroup.controls.name.value,
-    });
+    if (editGroup.controls.sticker.value) {
+      // the SDK doesn't know the sticker flag
+      await forkApi(client(), "PUT", `/custom/emoji/${data.id}`, {
+        name: editGroup.controls.name.value,
+        parent: { type: "Server", id: props.server.id },
+        sticker: true,
+      });
+      setStickers([data.id], true);
+    } else {
+      await props.server.createEmoji(data.id, {
+        name: editGroup.controls.name.value,
+      });
+    }
   }
 
   function onReset() {
     editGroup.controls.name.setValue("");
     editGroup.controls.file.setValue(null);
+    editGroup.controls.sticker.setValue(false);
   }
 
   const submit = Form2.useSubmitHandler(editGroup, onSubmit, onReset);
@@ -99,17 +124,24 @@ export function EmojiList(props: { server: Server }) {
                 autocomplete="off"
               />
 
+              <Form2.Checkbox control={editGroup.controls.sticker}>
+                <Trans>Sticker (shown large when sent on its own)</Trans>
+              </Form2.Checkbox>
+
               <Row align>
                 <Form2.Submit group={editGroup}>
                   <Trans>Create</Trans>
                 </Form2.Submit>
                 <Switch
                   fallback={
-                    <Trans>
-                      {instance.globalLimits.server_emoji -
-                        props.server.emojis.length}{" "}
-                      emoji slots remaining
-                    </Trans>
+                    <Show
+                      when={editGroup.controls.sticker.value}
+                      fallback={
+                        <Trans>{remaining(false)} emoji slots remaining</Trans>
+                      }
+                    >
+                      <Trans>{remaining(true)} sticker slots remaining</Trans>
+                    </Show>
                   }
                 >
                   <Match when={editGroup.errors?.error}>
@@ -126,11 +158,7 @@ export function EmojiList(props: { server: Server }) {
       </form>
 
       <Column gap="sm">
-        <For
-          each={props.server.emojis.toSorted((b, a) =>
-            a.id.localeCompare(b.id),
-          )}
-        >
+        <For each={emojis().toSorted((b, a) => a.id.localeCompare(b.id))}>
           {(emoji) => (
             <CategoryButton
               roundedIcon={false}
@@ -159,6 +187,29 @@ export function EmojiList(props: { server: Server }) {
           )}
         </For>
       </Column>
+
+      <Show when={stickers().length}>
+        <Column gap="sm">
+          <Text class="title">
+            <Trans>Stickers</Trans>
+          </Text>
+          <For each={stickers().toSorted((b, a) => a.id.localeCompare(b.id))}>
+            {(sticker) => (
+              <CategoryButton
+                roundedIcon={false}
+                icon={
+                  <Avatar src={sticker.url} shape="rounded-square" size={48} />
+                }
+                onClick={() =>
+                  openModal({ type: "emoji_preview", emoji: sticker })
+                }
+              >
+                <span class={css({ flex: 1 })}>:{sticker.name}:</span>
+              </CategoryButton>
+            )}
+          </For>
+        </Column>
+      </Show>
     </Column>
   );
 }

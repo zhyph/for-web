@@ -26,6 +26,10 @@ export const paragraph = styled("p", {
       large: {
         "--emoji-size": "var(--emoji-size-large)",
       },
+      // a message that is a single sticker (128px = the emoji preview size, so it stays crisp)
+      sticker: {
+        "--emoji-size": "128px",
+      },
     },
   },
 });
