@@ -14,6 +14,7 @@ import { unified } from "unified";
 import { VFile } from "vfile";
 
 import * as elements from "./elements";
+import { stickerSet } from "./emoji/stickers";
 import { injectEmojiSize } from "./emoji/util";
 import { RenderCodeblock } from "./plugins/Codeblock";
 import { RenderAnchor } from "./plugins/anchors";
@@ -395,8 +396,9 @@ export function Markdown(props: MarkdownProps) {
   // If it ever updates, re-render the whole tree:
   createEffect(
     on(
-      () => props.content,
-      (content) => setChildren(render(content)),
+      // the sticker set too: a lone custom emoji may turn out to be a sticker once it loads
+      [() => props.content, stickerSet],
+      ([content]) => setChildren(render(content)),
       { defer: true },
     ),
   );

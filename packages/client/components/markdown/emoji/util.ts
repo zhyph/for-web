@@ -3,6 +3,8 @@ import { RE_CUSTOM_EMOJI } from "stoat.js";
 import { MarkdownProps } from "..";
 import { RE_UNICODE_EMOJI } from "./UnicodeEmoji";
 
+import { isSticker } from "./stickers";
+
 /**
  * Regex for any emoji
  */
@@ -71,9 +73,15 @@ export function injectEmojiSize(
       // large by default
       let size = "large";
 
+      // a lone sticker renders at sticker size
+      const lone = content.trim().match(/^:([0-9A-HJKMNP-TV-Z]{26}):$/);
+      if (lone && isSticker(lone[1])) {
+        size = "sticker";
+      }
+
       // check if we match more than one
       // if so, make it slightly smaller
-      if (RE_ANY_EMOJI.exec(content)) {
+      else if (RE_ANY_EMOJI.exec(content)) {
         size = "medium";
       }
 
