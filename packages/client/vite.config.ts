@@ -1,6 +1,6 @@
 import { lingui as linguiSolidPlugin } from "@lingui/vite-plugin";
 import devtools from "@solid-devtools/transform";
-import { readdirSync } from "node:fs";
+import { cpSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { defineConfig } from "vite";
 import babelMacrosPlugin from "vite-plugin-babel-macros";
@@ -11,6 +11,14 @@ import solidSvg from "vite-plugin-solid-svg";
 
 import codegenPlugin from "./codegen.plugin";
 import { addFontPreload } from "./fontpreload.plugin";
+
+// Camera backgrounds: serve MediaPipe's WebAssembly from our own origin instead of jsDelivr
+// (the segmentation model is committed in public/mediapipe)
+cpSync(
+  resolve("node_modules/@mediapipe/tasks-vision/wasm"),
+  resolve("public/mediapipe/wasm"),
+  { recursive: true },
+);
 
 const base = process.env.BASE_PATH ?? "/";
 const pwaScope = process.env.PWA_SCOPE || base;

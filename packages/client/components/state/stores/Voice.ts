@@ -20,6 +20,18 @@ export type ScreenShareEncoderResults = {
 };
 
 /**
+ * Camera background effect
+ */
+export type CameraBackground = "none" | "blur-light" | "blur-strong" | "image";
+
+export const CameraBackgrounds: CameraBackground[] = [
+  "none",
+  "blur-light",
+  "blur-strong",
+  "image",
+];
+
+/**
  * Possible noise suppresion states. Browser is browser noise suppresion and enhanced is machine learning suppression via RNNoise.
  */
 export type NoiseSuppresionState = "disabled" | "browser" | "enhanced";
@@ -69,6 +81,10 @@ export interface TypeVoice {
   screenShareCodec: ScreenShareCodec | "auto";
   screenShareEncoders?: ScreenShareEncoderResults;
 
+  cameraBackground: CameraBackground;
+  /** Custom background image as a data URL (stays on this device) */
+  cameraBackgroundImage?: string;
+
   inputVolume: number;
   outputVolume: number;
   deafen: boolean;
@@ -112,6 +128,7 @@ export class Voice extends AbstractStore<"voice", TypeVoice> {
       screenShareQualityAsk: true,
       screenShareAudio: true,
       screenShareCodec: "auto",
+      cameraBackground: "none",
       inputVolume: 1.0,
       outputVolume: 1.0,
       deafen: false,
@@ -181,6 +198,20 @@ export class Voice extends AbstractStore<"voice", TypeVoice> {
       SCREEN_SHARE_CODECS.includes(input.screenShareCodec as ScreenShareCodec)
     ) {
       data.screenShareCodec = input.screenShareCodec!;
+    }
+
+    if (
+      input.cameraBackground &&
+      CameraBackgrounds.includes(input.cameraBackground)
+    ) {
+      data.cameraBackground = input.cameraBackground;
+    }
+
+    if (
+      typeof input.cameraBackgroundImage === "string" &&
+      input.cameraBackgroundImage.startsWith("data:image/")
+    ) {
+      data.cameraBackgroundImage = input.cameraBackgroundImage;
     }
 
     const results = input.screenShareEncoders;
@@ -408,6 +439,20 @@ export class Voice extends AbstractStore<"voice", TypeVoice> {
   }
 
   /**
+   * Set camera background effect
+   */
+  set cameraBackground(value: CameraBackground) {
+    this.set("cameraBackground", value);
+  }
+
+  /**
+   * Set custom camera background image (data URL)
+   */
+  set cameraBackgroundImage(value: string | undefined) {
+    this.set("cameraBackgroundImage", value);
+  }
+
+  /**
    * Set input volume
    */
   set inputVolume(value: number) {
@@ -510,6 +555,20 @@ export class Voice extends AbstractStore<"voice", TypeVoice> {
    */
   get screenShareEncoders(): ScreenShareEncoderResults | undefined {
     return this.get().screenShareEncoders;
+  }
+
+  /**
+   * Get camera background effect
+   */
+  get cameraBackground(): CameraBackground {
+    return this.get().cameraBackground;
+  }
+
+  /**
+   * Get custom camera background image (data URL)
+   */
+  get cameraBackgroundImage(): string | undefined {
+    return this.get().cameraBackgroundImage;
   }
 
   /**

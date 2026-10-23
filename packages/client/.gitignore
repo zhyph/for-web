@@ -1,4 +1,6 @@
 public/assets
+# copied from node_modules by vite.config.ts
+public/mediapipe/wasm
 
 ## Panda
 styled-system
