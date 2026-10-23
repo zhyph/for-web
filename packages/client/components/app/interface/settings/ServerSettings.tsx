@@ -15,6 +15,7 @@ import { EmojiList } from "./server/emojis/EmojiList";
 import { ListServerInvites } from "./server/invites/ListServerInvites";
 import { ServerRoleEditor } from "./server/roles/ServerRoleEditor";
 import { ServerRoleOverview } from "./server/roles/ServerRoleOverview";
+import { SoundboardList } from "./server/soundboard/SoundboardList";
 import { BackCard } from "./user/_AccountCard";
 
 const Config: SettingsConfiguration<Server> = {
@@ -64,6 +65,8 @@ const Config: SettingsConfiguration<Server> = {
         return <Overview server={server} />;
       case "emojis":
         return <EmojiList server={server} />;
+      case "soundboard":
+        return <SoundboardList server={server} />;
       case "roles":
         return <ServerRoleOverview context={server} />;
       case "invites":
@@ -107,6 +110,11 @@ const Config: SettingsConfiguration<Server> = {
               id: "emojis",
               icon: <Symbol size={20}>mood</Symbol>,
               title: <Trans>Emojis</Trans>,
+            },
+            {
+              id: "soundboard",
+              icon: <Symbol size={20}>music_note</Symbol>,
+              title: <Trans>Soundboard</Trans>,
             },
           ],
         },

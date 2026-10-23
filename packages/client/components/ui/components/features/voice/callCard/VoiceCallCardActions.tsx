@@ -4,6 +4,7 @@ import { Show } from "solid-js";
 import { useLingui } from "@lingui/solid/macro";
 import { styled } from "styled-system/jsx";
 
+import { SoundboardMenu } from "@revolt/app";
 import { useInstance } from "@revolt/instance";
 import { useVoice } from "@revolt/rtc";
 import { useState } from "@revolt/state";
@@ -124,6 +125,23 @@ export function VoiceCallCardActions(props: { size: "xs" | "sm" }) {
         >
           <Symbol>screen_share</Symbol>
         </Show>
+      </IconButton>
+      <IconButton
+        size={props.size}
+        variant="tonal"
+        isDisabled={!voice.speakingPermission}
+        use:floating={{
+          tooltip: {
+            placement: "top",
+            content: voice.speakingPermission
+              ? t`Soundboard`
+              : t`Missing permission`,
+          },
+          contextMenu: () => <SoundboardMenu />,
+          contextMenuHandler: "click",
+        }}
+      >
+        <Symbol>music_note</Symbol>
       </IconButton>
       <Button
         size={props.size}

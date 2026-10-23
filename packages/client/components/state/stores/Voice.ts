@@ -85,6 +85,9 @@ export interface TypeVoice {
   /** Custom background image as a data URL (stays on this device) */
   cameraBackgroundImage?: string;
 
+  /** Soundboard sound id played when we join a call */
+  entranceSound?: string;
+
   inputVolume: number;
   outputVolume: number;
   deafen: boolean;
@@ -212,6 +215,13 @@ export class Voice extends AbstractStore<"voice", TypeVoice> {
       input.cameraBackgroundImage.startsWith("data:image/")
     ) {
       data.cameraBackgroundImage = input.cameraBackgroundImage;
+    }
+
+    if (
+      typeof input.entranceSound === "string" &&
+      /^[0-9A-HJKMNP-TV-Z]{26}$/.test(input.entranceSound)
+    ) {
+      data.entranceSound = input.entranceSound;
     }
 
     const results = input.screenShareEncoders;
@@ -446,6 +456,13 @@ export class Voice extends AbstractStore<"voice", TypeVoice> {
   }
 
   /**
+   * Set entrance sound (soundboard sound id), or undefined for none
+   */
+  set entranceSound(value: string | undefined) {
+    this.set("entranceSound", value);
+  }
+
+  /**
    * Set custom camera background image (data URL)
    */
   set cameraBackgroundImage(value: string | undefined) {
@@ -562,6 +579,13 @@ export class Voice extends AbstractStore<"voice", TypeVoice> {
    */
   get cameraBackground(): CameraBackground {
     return this.get().cameraBackground;
+  }
+
+  /**
+   * Get entrance sound (soundboard sound id)
+   */
+  get entranceSound(): string | undefined {
+    return this.get().entranceSound;
   }
 
   /**
