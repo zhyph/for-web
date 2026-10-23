@@ -15,12 +15,14 @@ import {
 } from "solid-livekit-components";
 
 import {
+  AudioPresets,
   LocalTrackPublication,
   Room,
   ScreenShareCaptureOptions,
   ScreenSharePresets,
   Track,
   VideoEncoding,
+  VideoPreset,
   VideoPresets,
 } from "livekit-client";
 import { Channel } from "stoat.js";
@@ -37,8 +39,10 @@ import {
 import { VoiceCallCardContext } from "@revolt/ui/components/features/voice/callCard/VoiceCallCard";
 
 import { Device, useDevice } from "@revolt/common";
+import { type ScreenShareCodec, recommendCodec } from "./codecPick";
 import { InRoom } from "./components/InRoom";
 import { RoomAudioManager } from "./components/RoomAudioManager";
+import { probeEncoders, screenSize } from "./encoders";
 import { VoiceProcessor } from "./VoiceProcessor";
 
 type State =
@@ -211,6 +215,10 @@ class Voice {
 
     this.device.setWakeLocked();
 
+    const camera = this.#withinLimit(1920, 1080)
+      ? VideoPresets.h1080
+      : VideoPresets.h720;
+
     const room = new Room({
       audioCaptureDefaults: {
         deviceId: this.#settings.preferredAudioInputDevice,
@@ -223,13 +231,14 @@ class Voice {
         deviceId: this.#settings.preferredAudioOutputDevice,
       },
       videoCaptureDefaults: {
-        // TODO: Support higher resolutions based on limits
-        resolution: VideoPresets.h720.resolution,
+        resolution: camera.resolution,
         deviceId: this.#settings.preferredVideoDevice,
       },
       publishDefaults: {
-        videoEncoding: VideoPresets.h720.encoding,
+        videoEncoding: camera.encoding,
         screenShareEncoding: ScreenSharePresets.h720fps30.encoding,
+        // LiveKit defaults to 48 kbps; 128 kbps is its highest preset
+        audioPreset: AudioPresets.musicHighQualityStereo,
       },
     });
 
@@ -440,6 +449,8 @@ class Voice {
     };
 
     const limit = this.limits().video_resolution;
+    // added after the 60 FPS tiers so the picker lists resolutions in ascending order
+    let text: ScreenShareQuality | undefined;
 
     // TODO: Add more resolutions to stream from if they're enabled. May tie into premium users in the future?
     if (
@@ -466,7 +477,7 @@ class Voice {
           originalResolution.width / originalResolution.height;
       }
 
-      qualities.text = {
+      text = {
         name: "text",
         resolution: originalResolution,
         fullName: `Source 5FPS`,
@@ -475,7 +486,57 @@ class Voice {
       };
     }
 
+    // 60 FPS tiers, each offered only when the server's video limit allows it.
+    // Width and height must be non-zero: LiveKit drops the frame rate constraint for a 0x0 ("uncapped") resolution.
+    const tiers: [ScreenShareQualityName, string, VideoPreset][] = [
+      ["hd60", "1080p 60FPS", new VideoPreset(1920, 1080, 8_000_000, 60)],
+      ["qhd60", "1440p 60FPS", new VideoPreset(2560, 1440, 12_000_000, 60)],
+      [
+        "source60",
+        "Source 60FPS",
+        new VideoPreset(limit[0] || 3840, limit[1] || 2160, 20_000_000, 60),
+      ],
+    ];
+    for (const [name, fullName, preset] of tiers) {
+      if (!this.#withinLimit(preset.width, preset.height)) continue;
+      if (name === "source60" && text) qualities.text = text;
+      qualities[name] = {
+        name,
+        fullName,
+        contentHint: "motion",
+        resolution: preset.resolution,
+        encoding: preset.encoding,
+      };
+    }
+    if (text && !qualities.text) qualities.text = text;
+
     return qualities;
+  }
+
+  /**
+   * Codec for a new screen share: the user's choice, or Auto's pick from this device's
+   * encoder test results (or, untested, a quick check for GPU encoders)
+   */
+  async #screenShareCodec(): Promise<ScreenShareCodec> {
+    const chosen = this.#settings.screenShareCodec;
+    if (chosen !== "auto") return chosen;
+
+    const tested = this.#settings.screenShareEncoders;
+    if (tested) return recommendCodec(tested.encoders);
+
+    const { width, height } = screenSize();
+    return recommendCodec(await probeEncoders(width, height).catch(() => []));
+  }
+
+  /**
+   * Whether the server's video limit allows a stream of this size (0 means unlimited)
+   */
+  #withinLimit(width: number, height: number) {
+    const limit = this.limits().video_resolution;
+    return (
+      (limit[0] === 0 || limit[0] >= width) &&
+      (limit[1] === 0 || limit[1] >= height)
+    );
   }
 
   async toggleScreenshare() {
@@ -526,6 +587,8 @@ class Voice {
           this.getEnabledScreenShareQualities()[
             this.#settings.screenShareQuality || "low"
           ];
+        const codec = await this.#screenShareCodec();
+        const svc = codec === "vp9" || codec === "av1";
         const localTrack = await room.localParticipant.setScreenShareEnabled(
           true,
           {
@@ -538,7 +601,17 @@ class Voice {
               restrictOwnAudio: true,
             },
           },
-          { screenShareEncoding: chosenQuality?.encoding },
+          {
+            screenShareEncoding: chosenQuality?.encoding,
+            videoCodec: codec,
+            // Fallbacks for slow viewers. VP9/AV1: one full-resolution layer plus frame rate
+            // layers the server can drop (L3T3, LiveKit's default, encodes 3 resolutions).
+            scalabilityMode: svc ? "L1T3" : undefined,
+            // H.264/VP8: a small 720p 15 FPS copy, ~5% extra encoding next to a 3440x1440@60 source
+            // (a half-resolution copy cost ~25%).
+            simulcast: !svc,
+            screenShareSimulcastLayers: [ScreenSharePresets.h720fps15],
+          },
         );
 
         const screenAudioTrack = room.localParticipant.getTrackPublication(
@@ -627,6 +700,12 @@ class Voice {
                 this.#settings.screenShareAudio,
               );
             }
+          } else {
+            // Not asking: apply the saved quality, otherwise the stream stays at the 640x480@5fps capture clamp in index.ts
+            callback(
+              this.#settings.screenShareQuality || "low",
+              this.#settings.screenShareAudio,
+            );
           }
         }
       } catch (e) {

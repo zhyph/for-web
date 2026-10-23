@@ -3,9 +3,17 @@ import { createFormControl, createFormGroup } from "solid-forms";
 
 import { useState } from "@revolt/state";
 import { ScreenShareQualityName } from "@revolt/state/stores/Voice";
-import { Avatar, Column, Dialog, DialogProps, Form2, Ripple } from "@revolt/ui";
+import {
+  Avatar,
+  Column,
+  Dialog,
+  DialogProps,
+  Form2,
+  MenuItem,
+  Ripple,
+} from "@revolt/ui";
 
-import { createMemo } from "solid-js";
+import { createMemo, For } from "solid-js";
 import { styled } from "styled-system/jsx";
 import { Modals } from "../types";
 
@@ -82,15 +90,13 @@ export function ScreenSharePickerModal(
               </Item>
             )}
           </Form2.VirtualSelect>
-          <Form2.ButtonGroup
-            control={group.controls.qualityName}
-            buttonDefinitions={props.qualities.map((quality) => {
-              return {
-                children: quality.fullName,
-                value: quality.name,
-              };
-            })}
-          />
+          <Form2.Select label={t`Quality`} control={group.controls.qualityName}>
+            <For each={props.qualities}>
+              {(quality) => (
+                <MenuItem value={quality.name}>{quality.fullName}</MenuItem>
+              )}
+            </For>
+          </Form2.Select>
           <Form2.Checkbox control={group.controls.audio}>
             <Trans>Share audio</Trans>
           </Form2.Checkbox>

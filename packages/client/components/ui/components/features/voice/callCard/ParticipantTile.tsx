@@ -15,6 +15,7 @@ import { styled } from "styled-system/jsx";
 import { UserContextMenu } from "@revolt/app";
 import { useUser } from "@revolt/markdown/users";
 import { useVoice } from "@revolt/rtc";
+import { useSenderStats } from "@revolt/rtc/useSenderStats";
 import { useState } from "@revolt/state";
 import { Avatar } from "@revolt/ui/components/design";
 import { Row } from "@revolt/ui/components/layout";
@@ -72,6 +73,13 @@ export function ParticipantTile(props: TileProps) {
   const isVideo = () => !isVideoMuted();
   const isScreenShare = () => track.source === Track.Source.ScreenShare;
   const isSpeaking = useIsSpeaking(participant);
+
+  // encoder stats for our own screen share, shown in the hover overlay
+  const shareStats = useSenderStats(() =>
+    isScreenShare() && participant.isLocal
+      ? track.publication?.track
+      : undefined,
+  );
 
   const getHeight = () => {
     if (!props.focus || videoDims().height == 0) return {};
@@ -147,6 +155,16 @@ export function ParticipantTile(props: TileProps) {
         <Overlay showOnHover={isScreenShare()}>
           <OverlayInner>
             <OverflowingText>{user().username}</OverflowingText>
+            <Show when={shareStats()}>
+              {(s) => (
+                <ShareStats>
+                  {`${s().codec} · ${s().gpu ? "GPU" : "CPU"} · ${s().width}×${s().height} · ${s().fps} fps · ${s().mbps.toFixed(1)} Mbps`}
+                  <Show when={s().limit}>
+                    <ShareLimit>{` · ${s().limit} limited`}</ShareLimit>
+                  </Show>
+                </ShareStats>
+              )}
+            </Show>
             <Row gap="md">
               {isScreenShare() ? (
                 <Show when={isScreenShareAudioUserMuted()}>
@@ -282,6 +300,25 @@ const Overlay = styled("div", {
   },
   defaultVariants: {
     showOnHover: false,
+  },
+});
+
+const ShareStats = styled("span", {
+  base: {
+    flexShrink: 0,
+    fontSize: "11px",
+    fontVariantNumeric: "tabular-nums",
+    padding: "2px 6px",
+    borderRadius: "var(--borderRadius-sm)",
+    color: "var(--md-sys-color-inverse-on-surface)",
+    background:
+      "color-mix(in srgb, var(--md-sys-color-inverse-surface) 70%, transparent)",
+  },
+});
+
+const ShareLimit = styled("span", {
+  base: {
+    color: "var(--md-sys-color-error-container)",
   },
 });
 

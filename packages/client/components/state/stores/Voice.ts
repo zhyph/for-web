@@ -1,6 +1,23 @@
+import {
+  type EncoderInfo,
+  type ScreenShareCodec,
+  SCREEN_SHARE_CODECS,
+} from "@revolt/rtc/codecPick";
+
 import { State } from "..";
 
 import { AbstractStore } from ".";
+
+/**
+ * Encoder test results for this device, measured at the screen's resolution
+ */
+export type ScreenShareEncoderResults = {
+  width: number;
+  height: number;
+  /** When the test ran (ms since epoch) */
+  at: number;
+  encoders: EncoderInfo[];
+};
 
 /**
  * Possible noise suppresion states. Browser is browser noise suppresion and enhanced is machine learning suppression via RNNoise.
@@ -14,9 +31,16 @@ const NoiseSuppresionStates: NoiseSuppresionState[] = [
 ];
 
 /**
- * Possible screen share qualities. Low is 720p@30fps, high 1080p@30fps and text is source@5fps.
+ * Possible screen share qualities. Low is 720p@30fps, high 1080p@30fps, text is source@5fps,
+ * hd60/qhd60 are 1080p/1440p@60fps and source60 is source@60fps (capped by the server video limit).
  */
-export type ScreenShareQualityName = "low" | "high" | "text";
+export type ScreenShareQualityName =
+  | "low"
+  | "high"
+  | "text"
+  | "hd60"
+  | "qhd60"
+  | "source60";
 
 /**
  * Array of available screen share quality names.
@@ -25,6 +49,9 @@ export const ScreenShareQualityNames: ScreenShareQualityName[] = [
   "low",
   "high",
   "text",
+  "hd60",
+  "qhd60",
+  "source60",
 ];
 
 export interface TypeVoice {
@@ -39,6 +66,8 @@ export interface TypeVoice {
   screenShareQuality: ScreenShareQualityName;
   screenShareQualityAsk: boolean;
   screenShareAudio: boolean;
+  screenShareCodec: ScreenShareCodec | "auto";
+  screenShareEncoders?: ScreenShareEncoderResults;
 
   inputVolume: number;
   outputVolume: number;
@@ -82,6 +111,7 @@ export class Voice extends AbstractStore<"voice", TypeVoice> {
       screenShareQuality: "low",
       screenShareQualityAsk: true,
       screenShareAudio: true,
+      screenShareCodec: "auto",
       inputVolume: 1.0,
       outputVolume: 1.0,
       deafen: false,
@@ -144,6 +174,35 @@ export class Voice extends AbstractStore<"voice", TypeVoice> {
 
     if (typeof input.screenShareAudio === "boolean") {
       data.screenShareAudio = input.screenShareAudio;
+    }
+
+    if (
+      input.screenShareCodec === "auto" ||
+      SCREEN_SHARE_CODECS.includes(input.screenShareCodec as ScreenShareCodec)
+    ) {
+      data.screenShareCodec = input.screenShareCodec!;
+    }
+
+    const results = input.screenShareEncoders;
+    if (
+      results &&
+      typeof results.width === "number" &&
+      typeof results.height === "number" &&
+      typeof results.at === "number" &&
+      Array.isArray(results.encoders)
+    ) {
+      data.screenShareEncoders = {
+        width: results.width,
+        height: results.height,
+        at: results.at,
+        encoders: results.encoders.filter(
+          (e) =>
+            SCREEN_SHARE_CODECS.includes(e.codec) &&
+            typeof e.supported === "boolean" &&
+            typeof e.gpu === "boolean" &&
+            (e.fps === undefined || typeof e.fps === "number"),
+        ),
+      };
     }
 
     if (typeof input.inputVolume === "number") {
@@ -335,6 +394,20 @@ export class Voice extends AbstractStore<"voice", TypeVoice> {
   }
 
   /**
+   * Set screen share codec ("auto" picks from this device's encoder results)
+   */
+  set screenShareCodec(value: ScreenShareCodec | "auto") {
+    this.set("screenShareCodec", value);
+  }
+
+  /**
+   * Set encoder test results for this device
+   */
+  set screenShareEncoders(value: ScreenShareEncoderResults | undefined) {
+    this.set("screenShareEncoders", value);
+  }
+
+  /**
    * Set input volume
    */
   set inputVolume(value: number) {
@@ -423,6 +496,20 @@ export class Voice extends AbstractStore<"voice", TypeVoice> {
    */
   get screenShareAudio(): boolean {
     return this.get().screenShareAudio;
+  }
+
+  /**
+   * Get screen share codec
+   */
+  get screenShareCodec(): ScreenShareCodec | "auto" {
+    return this.get().screenShareCodec;
+  }
+
+  /**
+   * Get encoder test results for this device
+   */
+  get screenShareEncoders(): ScreenShareEncoderResults | undefined {
+    return this.get().screenShareEncoders;
   }
 
   /**
