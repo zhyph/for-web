@@ -39,6 +39,10 @@ import {
   Username,
 } from "@revolt/ui";
 import { MediaPickerProps } from "@revolt/ui/components/features/messaging/composition/picker/CompositionMediaPicker";
+import {
+  SUPER_PREFIX,
+  isShiftHeld,
+} from "@revolt/ui/components/features/messaging/elements/superReactions";
 import { Symbol } from "@revolt/ui/components/utils/Symbol";
 
 import { MessageContextMenu } from "../../../menus/MessageContextMenu";
@@ -366,11 +370,13 @@ export function Message(props: Props) {
           }
           onTextReplacement={(emoji) =>
             react(
-              emoji.startsWith(":")
-                ? emoji.slice(1, emoji.length - 1)
-                : startsWithPackPUA(emoji)
-                  ? emoji.slice(1)
-                  : emoji,
+              // holding shift while picking makes it a super reaction
+              (isShiftHeld() ? SUPER_PREFIX : "") +
+                (emoji.startsWith(":")
+                  ? emoji.slice(1, emoji.length - 1)
+                  : startsWithPackPUA(emoji)
+                    ? emoji.slice(1)
+                    : emoji),
             )
           }
         >

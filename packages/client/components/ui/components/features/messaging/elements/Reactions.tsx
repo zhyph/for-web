@@ -1,4 +1,4 @@
-import { For, Show, createMemo } from "solid-js";
+import { For, Show, createEffect, createMemo, on } from "solid-js";
 
 import { useLingui } from "@lingui/solid/macro";
 import { API } from "stoat.js";
@@ -12,6 +12,13 @@ import { Tooltip } from "@revolt/ui/components/floating";
 import { Row } from "@revolt/ui/components/layout";
 
 import MdAdd from "@material-design-icons/svg/outlined/add.svg?component-solid";
+
+import {
+  SUPER_PREFIX,
+  burst,
+  isSuperReaction,
+  reactionEmoji,
+} from "./superReactions";
 
 interface Props {
   /**
@@ -144,12 +151,28 @@ function Reaction(props: {
   const { t } = useLingui();
   const users = useUsers(() => [...(props.users?.values() ?? [])], false, true);
 
+  const isSuper = () => isSuperReaction(props.reaction);
+  const emoji = () => reactionEmoji(props.reaction);
+  let pill!: HTMLDivElement;
+
+  // burst when a super reaction appears or someone else joins it
+  createEffect(
+    on(
+      () => props.users?.size ?? 0,
+      (size, previous) => {
+        if (isSuper() && pill && size > (previous ?? 0)) burst(pill);
+      },
+    ),
+  );
+
   /**
-   * Handle toggling reaction
+   * Handle toggling reaction; shift-click on a normal reaction adds it as a super reaction
    */
-  function onClick() {
+  function onClick(e: MouseEvent) {
     if (props.active) {
       props.removeReaction(props.reaction);
+    } else if (e.shiftKey && !isSuper()) {
+      props.addReaction(SUPER_PREFIX + props.reaction);
     } else {
       props.addReaction(props.reaction);
     }
@@ -188,18 +211,27 @@ function Reaction(props: {
       content={() => (
         <Row align gap="lg">
           <span style={{ "--emoji-size": "3em" }}>
-            <Emoji emoji={props.reaction} />
+            <Emoji emoji={emoji()} />
           </span>
           <Text class="_messages">
-            <PeopleList>{peopleList()}</PeopleList>
+            <PeopleList>
+              {isSuper() ? t`Super reaction: ` : ""}
+              {peopleList()}
+              {isSuper() ? "" : t` (shift-click for a super reaction)`}
+            </PeopleList>
           </Text>
         </Row>
       )}
       aria={peopleList()}
     >
-      <ReactionBase active={props.active} onClick={onClick}>
+      <ReactionBase
+        ref={pill}
+        active={props.active}
+        super={isSuper()}
+        onClick={onClick}
+      >
         <Ripple />
-        <Emoji emoji={props.reaction} /> {props.users?.size || 0}
+        <Emoji emoji={emoji()} /> {props.users?.size || 0}
       </ReactionBase>
     </Tooltip>
   );
@@ -244,9 +276,38 @@ const ReactionBase = styled("div", {
         background: "var(--md-sys-color-surface-container-low)",
       },
     },
+    // super reaction: gradient border over the normal fill, and a soft glow
+    super: {
+      true: {
+        border: "1.5px solid transparent",
+        backgroundClip: "padding-box, border-box",
+        backgroundOrigin: "border-box",
+        boxShadow: "0 0 10px rgba(236, 72, 153, 0.35)",
+      },
+      false: {},
+    },
   },
+  compoundVariants: [
+    {
+      super: true,
+      active: true,
+      css: {
+        backgroundImage:
+          "linear-gradient(var(--md-sys-color-secondary-container), var(--md-sys-color-secondary-container)), linear-gradient(135deg, #f472b6, #a78bfa, #38bdf8)",
+      },
+    },
+    {
+      super: true,
+      active: false,
+      css: {
+        backgroundImage:
+          "linear-gradient(var(--md-sys-color-surface-container-low), var(--md-sys-color-surface-container-low)), linear-gradient(135deg, #f472b6, #a78bfa, #38bdf8)",
+      },
+    },
+  ],
   defaultVariants: {
     active: false,
+    super: false,
   },
 });
 
