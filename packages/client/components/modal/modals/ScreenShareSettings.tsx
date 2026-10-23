@@ -3,10 +3,10 @@ import { createFormControl, createFormGroup } from "solid-forms";
 
 import { useState } from "@revolt/state";
 import { ScreenShareQualityName } from "@revolt/state/stores/Voice";
-import { Column, Dialog, DialogProps, Form2 } from "@revolt/ui";
+import { Column, Dialog, DialogProps, Form2, MenuItem } from "@revolt/ui";
 import { VideoTrack } from "solid-livekit-components";
 
-import { Show } from "solid-js";
+import { For, Show } from "solid-js";
 import { Modals } from "../types";
 
 export function ScreenShareSettingsModal(
@@ -73,15 +73,13 @@ export function ScreenShareSettingsModal(
       />
       <form onSubmit={submit}>
         <Column>
-          <Form2.ButtonGroup
-            control={group.controls.qualityName}
-            buttonDefinitions={props.qualities.map((quality) => {
-              return {
-                children: quality.fullName,
-                value: quality.name,
-              };
-            })}
-          />
+          <Form2.Select label={t`Quality`} control={group.controls.qualityName}>
+            <For each={props.qualities}>
+              {(quality) => (
+                <MenuItem value={quality.name}>{quality.fullName}</MenuItem>
+              )}
+            </For>
+          </Form2.Select>
           <Show when={props.audio}>
             <Form2.Checkbox control={group.controls.audio}>
               <Trans>Share audio</Trans>
