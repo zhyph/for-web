@@ -17,6 +17,7 @@ import {
 import {
   AudioPresets,
   LocalTrackPublication,
+  LocalVideoTrack,
   Room,
   ScreenShareCaptureOptions,
   ScreenSharePresets,
@@ -413,11 +414,41 @@ class Voice {
     try {
       const room = this.room();
       if (!room) throw "invalid state";
+      const enable = !room.localParticipant.isCameraEnabled;
+      // background effects load on demand (they pull in MediaPipe)
+      const processor =
+        enable && this.#settings.cameraBackground !== "none"
+          ? (await import("./background")).createCameraBackground(
+              this.#settings.cameraBackground,
+              this.#settings.cameraBackgroundImage,
+            )
+          : undefined;
       await room.localParticipant.setCameraEnabled(
-        !room.localParticipant.isCameraEnabled,
+        enable,
+        processor ? { processor } : undefined,
       );
 
       this.#setVideo(room.localParticipant.isCameraEnabled);
+    } catch (e) {
+      this.onErr(e);
+    }
+  }
+
+  /**
+   * Apply the configured camera background to our camera if it's on (after a settings change)
+   */
+  async updateCameraBackground() {
+    const track = this.room()?.localParticipant.getTrackPublication(
+      Track.Source.Camera,
+    )?.track;
+    if (!(track instanceof LocalVideoTrack)) return;
+    try {
+      const { applyCameraBackground } = await import("./background");
+      await applyCameraBackground(
+        track,
+        this.#settings.cameraBackground,
+        this.#settings.cameraBackgroundImage,
+      );
     } catch (e) {
       this.onErr(e);
     }
