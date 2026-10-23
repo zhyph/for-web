@@ -34,8 +34,12 @@ import {
   SystemMessage,
   SystemMessageIcon,
   Tooltip,
-  Username,
+  typography,
 } from "@revolt/ui";
+import {
+  Decorated,
+  StyledName,
+} from "@revolt/ui/components/features/cosmetics/Cosmetics";
 import { MediaPickerProps } from "@revolt/ui/components/features/messaging/composition/picker/CompositionMediaPicker";
 import {
   SUPER_PREFIX,
@@ -155,16 +159,29 @@ export function Message(props: Props) {
         onHover={setIsHovering}
         username={
           <div use:floating={floatingUserMenusFromMessage(props.message)}>
-            <Username
-              username={
-                props.message.masquerade?.name ??
-                props.message.member?.nickname ??
-                props.message.author?.displayName ??
-                props.message.author?.username ??
-                props.message.username
-              }
-              colour={props.message.roleColour!}
-            />
+            <span class={typography({ class: "label", size: "large" })}>
+              <StyledName
+                name={
+                  props.message.masquerade?.name ??
+                  props.message.member?.nickname ??
+                  props.message.author?.displayName ??
+                  props.message.author?.username ??
+                  props.message.username
+                }
+                userId={
+                  props.message.masquerade ? undefined : props.message.authorId
+                }
+                serverId={props.message.channel?.serverId}
+                roleColour={props.message.roleColour}
+                roleId={
+                  props.message.masquerade?.colour
+                    ? undefined
+                    : props.message.member?.orderedRoles
+                        ?.filter((role) => role.colour)
+                        .at(-1)?.id
+                }
+              />
+            </span>
           </div>
         }
         avatar={
@@ -172,14 +189,20 @@ export function Message(props: Props) {
             class={avatarContainer()}
             use:floating={floatingUserMenusFromMessage(props.message)}
           >
-            <Avatar
-              size={36}
-              src={
-                isHovering()
-                  ? props.message.animatedAvatarURL
-                  : props.message.avatarURL
+            <Decorated
+              userId={
+                props.message.masquerade ? undefined : props.message.authorId
               }
-            />
+            >
+              <Avatar
+                size={36}
+                src={
+                  isHovering()
+                    ? props.message.animatedAvatarURL
+                    : props.message.avatarURL
+                }
+              />
+            </Decorated>
           </div>
         }
         pronouns={pronouns()}

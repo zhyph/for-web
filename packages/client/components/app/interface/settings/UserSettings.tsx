@@ -1,4 +1,5 @@
 import { Show } from "solid-js";
+import { Cosmetics } from "./user/cosmetics/Cosmetics";
 
 import { Trans } from "@lingui/solid/macro";
 import { Server } from "stoat.js";
@@ -84,6 +85,8 @@ const Config: SettingsConfiguration<{ server: Server }> = {
         return <AdvancedSettings />;
       case "profile":
         return <EditProfile />;
+      case "cosmetics":
+        return <Cosmetics />;
       case "sessions":
         return <Sessions />;
       case "bots":
@@ -214,6 +217,11 @@ const Config: SettingsConfiguration<{ server: Server }> = {
               id: "profile",
               icon: <MdAccountCircle {...iconSize(20)} />,
               title: <Trans>Profile</Trans>,
+            },
+            {
+              id: "cosmetics",
+              icon: <MdWorkspacePremium {...iconSize(20)} />,
+              title: <Trans>Cosmetics</Trans>,
             },
             {
               id: "sessions",

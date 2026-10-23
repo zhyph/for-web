@@ -11,6 +11,7 @@ import { SettingsConfiguration } from ".";
 import { ChannelPermissionsEditor } from "./channel/permissions/ChannelPermissionsEditor";
 import Overview from "./server/Overview";
 import { ListServerBans } from "./server/bans/ListBans";
+import { ServerCosmetics } from "./server/cosmetics/ServerCosmetics";
 import { EmojiList } from "./server/emojis/EmojiList";
 import { ListServerInvites } from "./server/invites/ListServerInvites";
 import { ServerRoleEditor } from "./server/roles/ServerRoleEditor";
@@ -67,6 +68,8 @@ const Config: SettingsConfiguration<Server> = {
         return <EmojiList server={server} />;
       case "soundboard":
         return <SoundboardList server={server} />;
+      case "cosmetics":
+        return <ServerCosmetics server={server} />;
       case "roles":
         return <ServerRoleOverview context={server} />;
       case "invites":
@@ -115,6 +118,14 @@ const Config: SettingsConfiguration<Server> = {
               id: "soundboard",
               icon: <Symbol size={20}>music_note</Symbol>,
               title: <Trans>Soundboard</Trans>,
+            },
+            {
+              id: "cosmetics",
+              icon: <Symbol size={20}>auto_awesome</Symbol>,
+              title: <Trans>Tag, Invite & Role Styles</Trans>,
+              hidden:
+                !server.havePermission("ManageServer") &&
+                !server.havePermission("ManageRole"),
             },
           ],
         },

@@ -5,9 +5,11 @@ import { css } from "styled-system/css";
 import { styled } from "styled-system/jsx";
 
 import { useLingui } from "@lingui/solid/macro";
+import { fileUrl, memberStyle } from "@revolt/client/cosmetics";
 import { OverflowingText, Tooltip } from "@revolt/ui";
 import { Avatar, Ripple, UserStatus, typography } from "../../design";
 import { Row } from "../../layout";
+import { Decorated, StyledName } from "../cosmetics/Cosmetics";
 
 export function ProfileBanner(props: {
   user: User;
@@ -39,10 +41,16 @@ export function ProfileBanner(props: {
 
   const pronouns = () => props.member?.pronouns ?? props.user.pronouns;
 
+  // a per-server banner (fork cosmetics) replaces the profile banner inside that server
+  const banner = () =>
+    fileUrl(
+      memberStyle(props.member?.id.server, props.user.id)?.banner ?? undefined,
+    ) ?? props.bannerUrl;
+
   return (
     <Banner
       style={{
-        "background-image": `linear-gradient(rgba(0, 0, 0, 0.2),rgba(0, 0, 0, 0.7)), url('${props.bannerUrl}')`,
+        "background-image": `linear-gradient(rgba(0, 0, 0, 0.2),rgba(0, 0, 0, 0.7)), url('${banner()}')`,
       }}
       isLink={typeof props.onClick !== "undefined"}
       onClick={props.onClick}
@@ -53,25 +61,29 @@ export function ProfileBanner(props: {
       </Show>
 
       <Row align gap="lg">
-        <Avatar
-          src={props.user.animatedAvatarURL}
-          size={48}
-          holepunch="bottom-right"
-          onClick={props.onClickAvatar}
-          interactive={props.user.avatar && !!props.onClickAvatar}
-          overlay={<UserStatus.Graphic status={props.user.presence} />}
-        />
+        <Decorated userId={props.user.id}>
+          <Avatar
+            src={props.user.animatedAvatarURL}
+            size={48}
+            holepunch="bottom-right"
+            onClick={props.onClickAvatar}
+            interactive={props.user.avatar && !!props.onClickAvatar}
+            overlay={<UserStatus.Graphic status={props.user.presence} />}
+          />
+        </Decorated>
         <UserDetails>
-          <Show
-            when={
-              (props.member?.displayName ?? props.user.displayName) !==
-              props.user.username
-            }
-          >
-            <span class={css({ fontWeight: 600 })}>
-              {props.member?.displayName ?? props.user.displayName}
-            </span>
-          </Show>
+          <span class={css({ fontWeight: 600 })}>
+            <StyledName
+              name={props.member?.displayName ?? props.user.displayName}
+              userId={props.user.id}
+              serverId={props.member?.id.server}
+              roleColour={props.member?.roleColour}
+              roleId={
+                props.member?.orderedRoles?.filter((role) => role.colour).at(-1)
+                  ?.id
+              }
+            />
+          </span>
           <Row>
             <UsernameContainer>
               <Tooltip

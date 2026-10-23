@@ -15,6 +15,7 @@ import { MessageCache } from "@revolt/app/interface/channels/text/MessageCache";
 import { Titlebar } from "@revolt/app/interface/desktop/Titlebar";
 import { useClient, useClientLifecycle } from "@revolt/client";
 import { State } from "@revolt/client/Controller";
+import { CosmeticsSync } from "@revolt/client/CosmeticsSync";
 import { NotificationsWorker } from "@revolt/client/NotificationsWorker";
 import { StickerSync } from "@revolt/client/StickerSync";
 import { useModals } from "@revolt/modal";
@@ -136,6 +137,7 @@ const Interface = (props: { children: JSX.Element }) => {
 
         <NotificationsWorker />
         <StickerSync />
+        <CosmeticsSync />
       </AppRoot>
     </MessageCache>
   );

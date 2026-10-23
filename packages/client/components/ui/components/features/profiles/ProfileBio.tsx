@@ -11,6 +11,7 @@ import { ProfileCard } from "./ProfileCard";
 interface Props {
   full?: boolean;
   content?: string;
+  title?: string;
   onClick?: () => void;
 }
 
@@ -31,7 +32,7 @@ export function ProfileBio(props: Props) {
         </Show>
 
         <Text class="title" size="large">
-          Bio
+          {props.title ?? "Bio"}
         </Text>
 
         <Bio>

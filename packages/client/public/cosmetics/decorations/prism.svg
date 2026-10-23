@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 136 136">
+  <defs>
+    <linearGradient id="r" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ef4444"/><stop offset=".17" stop-color="#f59e0b"/><stop offset=".34" stop-color="#eab308"/>
+      <stop offset=".51" stop-color="#22c55e"/><stop offset=".68" stop-color="#3b82f6"/><stop offset=".85" stop-color="#8b5cf6"/><stop offset="1" stop-color="#ec4899"/>
+    </linearGradient>
+  </defs>
+  <g>
+    <animateTransform attributeName="transform" type="rotate" from="0 68 68" to="-360 68 68" dur="4s" repeatCount="indefinite"/>
+    <circle cx="68" cy="68" r="55.5" fill="none" stroke="url(#r)" stroke-width="5"/>
+  </g>
+  <circle cx="68" cy="68" r="58.5" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width=".8"/>
+  <path d="M68 6 l3 6 -3 6 -3 -6z" fill="#fff"><animate attributeName="opacity" values="0;1;0" dur="2s" repeatCount="indefinite"/></path>
+  <path d="M118 96 l2 4 -2 4 -2 -4z" fill="#fff"><animate attributeName="opacity" values="0;1;0" dur="2s" begin="1s" repeatCount="indefinite"/></path>
+</svg>

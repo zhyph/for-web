@@ -5,6 +5,7 @@ import { useNavigate } from "@solidjs/router";
 import { useMutation } from "@tanstack/solid-query";
 import { ServerPublicInvite } from "stoat.js";
 
+import { fileUrl, serverStyle } from "@revolt/client/cosmetics";
 import { Avatar, Dialog, DialogProps, Row } from "@revolt/ui";
 
 import { useModals } from "..";
@@ -16,6 +17,12 @@ import { Modals } from "../types";
 export function InviteModal(props: DialogProps & Modals & { type: "invite" }) {
   const navigate = useNavigate();
   const { showError } = useModals();
+
+  // fork cosmetics: invite background and server tag (public endpoint)
+  const style = () =>
+    props.invite instanceof ServerPublicInvite
+      ? serverStyle(props.invite.serverId)
+      : undefined;
 
   const join = useMutation(() => ({
     mutationFn: () => (props.invite as ServerPublicInvite).join(),
@@ -41,6 +48,9 @@ export function InviteModal(props: DialogProps & Modals & { type: "invite" }) {
                 fallback={(props.invite as ServerPublicInvite).serverName}
               />
               <span>{(props.invite as ServerPublicInvite).serverName}</span>
+              <Show when={style()?.tag}>
+                <span class="zc-tag">{style()!.tag}</span>
+              </Show>
             </Row>
           </Match>
         </Switch>
@@ -66,7 +76,8 @@ export function InviteModal(props: DialogProps & Modals & { type: "invite" }) {
       isDisabled={join.isPending}
       scrimBackground={
         props.invite instanceof ServerPublicInvite
-          ? props.invite.serverBanner?.originalUrl
+          ? (fileUrl(style()?.invite_background) ??
+            props.invite.serverBanner?.originalUrl)
           : undefined
       }
     >

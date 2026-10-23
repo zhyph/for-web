@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 400" preserveAspectRatio="xMidYMid slice">
+  <g fill="none" stroke="#bae6fd" stroke-width="1.4" opacity=".8">
+    <circle r="7"><animateMotion path="M40 410 Q60 200 30 -20" dur="7s" repeatCount="indefinite"/></circle>
+    <circle r="4"><animateMotion path="M110 410 Q90 200 120 -20" dur="9s" begin="2s" repeatCount="indefinite"/></circle>
+    <circle r="10"><animateMotion path="M190 410 Q220 200 180 -20" dur="11s" begin="1s" repeatCount="indefinite"/></circle>
+    <circle r="5"><animateMotion path="M260 410 Q240 200 270 -20" dur="8s" begin="3.5s" repeatCount="indefinite"/></circle>
+    <circle r="6"><animateMotion path="M310 410 Q330 200 300 -20" dur="10s" begin="5s" repeatCount="indefinite"/></circle>
+  </g>
+</svg>
