@@ -1,6 +1,12 @@
 import { useQuery } from "@tanstack/solid-query";
 import { styled } from "styled-system/jsx";
 
+import { memberStyle } from "@revolt/client/cosmetics";
+import {
+  ProfileEffect,
+  profileTheme,
+} from "@revolt/ui/components/features/cosmetics/Cosmetics";
+
 import { Dialog, DialogProps, Profile } from "@revolt/ui";
 
 import { useModals } from "..";
@@ -23,7 +29,8 @@ export function UserProfileModal(
       minWidth={560}
       padding={8}
     >
-      <Grid>
+      <Grid style={profileTheme(props.user.id)}>
+        <ProfileEffect userId={props.user.id} />
         <Profile.Banner
           width={3}
           user={props.user}
@@ -56,6 +63,14 @@ export function UserProfileModal(
         <Profile.Joined user={props.user} member={props.member} />
         <Profile.Mutuals user={props.user} member={props.member} />
         <Profile.Bio content={query.data?.content} full />
+        <Profile.Bio
+          title="Server bio"
+          content={
+            memberStyle(props.member?.id.server, props.user.id)?.bio ??
+            undefined
+          }
+          full={true}
+        />
       </Grid>
     </Dialog>
   );
@@ -66,6 +81,7 @@ const Grid = styled("div", {
     display: "grid",
     gap: "var(--gap-md)",
     padding: "var(--gap-md)",
+    borderRadius: "var(--borderRadius-xl)",
     gridTemplateColumns: "repeat(3, 1fr)",
   },
 });

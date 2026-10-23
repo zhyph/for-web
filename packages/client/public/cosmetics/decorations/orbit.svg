@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 136 136">
+  <circle cx="68" cy="68" r="57" fill="none" stroke="#c4b5fd" stroke-opacity=".35" stroke-width="1" stroke-dasharray="2 5"/>
+  <g>
+    <animateTransform attributeName="transform" type="rotate" from="0 68 68" to="360 68 68" dur="6s" repeatCount="indefinite"/>
+    <circle cx="125" cy="68" r="4.5" fill="#fde68a"/><circle cx="125" cy="68" r="8" fill="#fde68a" opacity=".25"/>
+  </g>
+  <g>
+    <animateTransform attributeName="transform" type="rotate" from="140 68 68" to="-220 68 68" dur="9s" repeatCount="indefinite"/>
+    <circle cx="125" cy="68" r="3" fill="#93c5fd"/><circle cx="125" cy="68" r="6" fill="#93c5fd" opacity=".25"/>
+  </g>
+  <g>
+    <animateTransform attributeName="transform" type="rotate" from="250 68 68" to="610 68 68" dur="13s" repeatCount="indefinite"/>
+    <circle cx="125" cy="68" r="2.2" fill="#f9a8d4"/>
+  </g>
+</svg>

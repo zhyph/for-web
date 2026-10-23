@@ -27,3 +27,22 @@ export async function forkApi<T>(
   }
   return (res.status === 204 ? undefined : await res.json()) as T;
 }
+
+/** Upload a file to the media server under `tag`; returns the upload id to claim with an API call */
+export async function uploadFile(
+  client: Client,
+  mediaUrl: string,
+  tag: string,
+  file: File,
+): Promise<string> {
+  const body = new FormData();
+  body.append("file", file);
+  const [key, value] = client.authenticationHeader;
+  const res = await fetch(`${mediaUrl}/${tag}`, {
+    method: "POST",
+    body,
+    headers: { [key]: value },
+  });
+  if (!res.ok) throw await res.json();
+  return ((await res.json()) as { id: string }).id;
+}

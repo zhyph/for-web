@@ -3,6 +3,12 @@ import { JSX, onMount, Show } from "solid-js";
 import { cva } from "styled-system/css";
 import { styled } from "styled-system/jsx";
 
+import { memberStyle } from "@revolt/client/cosmetics";
+import {
+  ProfileEffect,
+  profileTheme,
+} from "@revolt/ui/components/features/cosmetics/Cosmetics";
+
 import { useDevice } from "@revolt/common";
 import { useModals } from "@revolt/modal";
 
@@ -57,7 +63,8 @@ export function UserCard(
           e.preventDefault();
         }}
       >
-        <Grid>
+        <Grid style={profileTheme(props.user.id)}>
+          <ProfileEffect userId={props.user.id} />
           <Profile.Banner
             width={2}
             user={props.user}
@@ -79,6 +86,14 @@ export function UserCard(
             <Profile.Owner bot={props.bot!} />
           </Show>
           <Profile.Bio content={query.data?.content} onClick={openFull} />
+          <Profile.Bio
+            title="Server bio"
+            content={
+              memberStyle(props.member?.id.server, props.user.id)?.bio ??
+              undefined
+            }
+            full={false}
+          />
         </Grid>
       </div>
     </Show>
@@ -90,6 +105,9 @@ const Grid = styled("div", {
     display: "grid",
     gap: "var(--gap-md)",
     padding: "var(--gap-md)",
+    borderRadius: "var(--borderRadius-xl)",
+    minHeight: "100%",
+    alignContent: "start",
     gridTemplateColumns: "repeat(2, 1fr)",
   },
 });

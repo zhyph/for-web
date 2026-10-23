@@ -2,7 +2,7 @@ import { createSignal } from "solid-js";
 
 import type { Client } from "stoat.js";
 
-import { forkApi } from "@revolt/client/forkApi";
+import { forkApi, uploadFile } from "@revolt/client/forkApi";
 
 /**
  * Soundboard sound, as returned by our fork's API (see NITRO.md; not part of the SDK)
@@ -67,16 +67,7 @@ export async function createSound(
   file: File,
   data: { name: string; volume?: number; emoji?: string },
 ) {
-  const body = new FormData();
-  body.append("file", file);
-  const [key, value] = client.authenticationHeader;
-  const res = await fetch(`${mediaUrl}/sounds`, {
-    method: "POST",
-    body,
-    headers: { [key]: value },
-  });
-  if (!res.ok) throw await res.json();
-  const { id } = (await res.json()) as { id: string };
+  const id = await uploadFile(client, mediaUrl, "sounds", file);
 
   return forkApi<SoundboardSound>(
     client,
