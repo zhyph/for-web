@@ -176,6 +176,7 @@ export function SoundboardList(props: { server: Server }) {
           </Text>
           <input
             type="range"
+            style={{ "accent-color": "var(--md-sys-color-primary)" }}
             min="0"
             max="100"
             value={volume()}
@@ -213,6 +214,11 @@ export function SoundboardList(props: { server: Server }) {
       </Column>
 
       <Column gap="sm">
+        <Show when={sounds()?.length}>
+          <Text class="title">
+            <Trans>Sounds</Trans>
+          </Text>
+        </Show>
         <For each={sounds()}>
           {(sound) => (
             <CategoryButton
@@ -223,6 +229,7 @@ export function SoundboardList(props: { server: Server }) {
                 <Row align>
                   <input
                     type="range"
+                    style={{ "accent-color": "var(--md-sys-color-primary)" }}
                     min="0"
                     max="100"
                     value={sound.volume}

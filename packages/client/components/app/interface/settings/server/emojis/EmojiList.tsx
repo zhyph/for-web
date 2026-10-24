@@ -2,7 +2,7 @@ import { createFormControl, createFormGroup } from "solid-forms";
 import { For, Match, Show, Switch } from "solid-js";
 
 import { Trans, useLingui } from "@lingui/solid/macro";
-import { Server } from "stoat.js";
+import { Emoji, Server } from "stoat.js";
 import { css } from "styled-system/css";
 
 import { useClient } from "@revolt/client";
@@ -87,6 +87,36 @@ export function EmojiList(props: { server: Server }) {
     }
   }
 
+  /**
+   * One emoji or sticker in the lists
+   */
+  const row = (emoji: Emoji) => (
+    <CategoryButton
+      roundedIcon={false}
+      icon={<Avatar src={emoji.url} shape="rounded-square" />}
+      onClick={() => openModal({ type: "emoji_preview", emoji })}
+    >
+      <Column gap="none">
+        <span class={css({ flex: 1 })}>:{emoji.name}:</span>
+        <span
+          class={css({
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            gap: "var(--gap-sm)",
+          })}
+        >
+          <Avatar
+            size={12}
+            fallback={emoji.creator?.displayName}
+            src={emoji.creator?.animatedAvatarURL}
+          />
+          <Text class="label">{emoji.creator?.displayName}</Text>
+        </span>
+      </Column>
+    </CategoryButton>
+  );
+
   function onReset() {
     editGroup.controls.name.setValue("");
     editGroup.controls.file.setValue(null);
@@ -158,33 +188,13 @@ export function EmojiList(props: { server: Server }) {
       </form>
 
       <Column gap="sm">
+        <Show when={stickers().length}>
+          <Text class="title">
+            <Trans>Emojis</Trans>
+          </Text>
+        </Show>
         <For each={emojis().toSorted((b, a) => a.id.localeCompare(b.id))}>
-          {(emoji) => (
-            <CategoryButton
-              roundedIcon={false}
-              icon={<Avatar src={emoji.url} shape="rounded-square" />}
-              onClick={() => openModal({ type: "emoji_preview", emoji })}
-            >
-              <Column gap="none">
-                <span class={css({ flex: 1 })}>:{emoji.name}:</span>
-                <span
-                  class={css({
-                    flex: 1,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "var(--gap-sm)",
-                  })}
-                >
-                  <Avatar
-                    size={12}
-                    fallback={emoji.creator?.displayName}
-                    src={emoji.creator?.animatedAvatarURL}
-                  />
-                  <Text class="label">{emoji.creator?.displayName}</Text>
-                </span>
-              </Column>
-            </CategoryButton>
-          )}
+          {row}
         </For>
       </Column>
 
@@ -194,19 +204,7 @@ export function EmojiList(props: { server: Server }) {
             <Trans>Stickers</Trans>
           </Text>
           <For each={stickers().toSorted((b, a) => a.id.localeCompare(b.id))}>
-            {(sticker) => (
-              <CategoryButton
-                roundedIcon={false}
-                icon={
-                  <Avatar src={sticker.url} shape="rounded-square" size={48} />
-                }
-                onClick={() =>
-                  openModal({ type: "emoji_preview", emoji: sticker })
-                }
-              >
-                <span class={css({ flex: 1 })}>:{sticker.name}:</span>
-              </CategoryButton>
-            )}
+            {row}
           </For>
         </Column>
       </Show>

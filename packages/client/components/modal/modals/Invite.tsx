@@ -6,6 +6,7 @@ import { useMutation } from "@tanstack/solid-query";
 import { ServerPublicInvite } from "stoat.js";
 
 import { fileUrl, serverStyle } from "@revolt/client/cosmetics";
+import { Emoji } from "@revolt/markdown";
 import { Avatar, Dialog, DialogProps, Row } from "@revolt/ui";
 
 import { useModals } from "..";
@@ -39,7 +40,7 @@ export function InviteModal(props: DialogProps & Modals & { type: "invite" }) {
       title={
         <Switch>
           <Match when={props.invite.type === "Server"}>
-            <Row>
+            <Row align>
               <Avatar
                 size={32}
                 src={
@@ -49,7 +50,12 @@ export function InviteModal(props: DialogProps & Modals & { type: "invite" }) {
               />
               <span>{(props.invite as ServerPublicInvite).serverName}</span>
               <Show when={style()?.tag}>
-                <span class="zc-tag">{style()!.tag}</span>
+                <span class="zc-tag">
+                  <Show when={style()!.tag_emoji}>
+                    <Emoji emoji={style()!.tag_emoji!} />
+                  </Show>
+                  {style()!.tag}
+                </span>
               </Show>
             </Row>
           </Match>

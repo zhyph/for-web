@@ -17,9 +17,12 @@ import {
   Row,
   Tooltip,
   typography,
-  Username,
   UserStatus,
 } from "@revolt/ui";
+import {
+  Decorated,
+  StyledName,
+} from "@revolt/ui/components/features/cosmetics/Cosmetics";
 
 interface Props {
   /**
@@ -374,21 +377,35 @@ function Member(props: {
           (props.user ?? props.member?.user)?.online ? "active" : "muted"
         }
         icon={
-          <Avatar
-            src={user().avatar}
-            size={32}
-            holepunch="bottom-right"
-            overlay={
-              <UserStatus.Graphic
-                status={(props.user ?? props.member?.user)?.presence}
-              />
-            }
-          />
+          <Decorated userId={(props.user ?? props.member?.user)?.id}>
+            <Avatar
+              src={user().avatar}
+              size={32}
+              holepunch="bottom-right"
+              overlay={
+                <UserStatus.Graphic
+                  status={(props.user ?? props.member?.user)?.presence}
+                />
+              }
+            />
+          </Decorated>
         }
       >
         <NameStatusStack>
           <OverflowingText>
-            <Username username={user().username} colour={user().colour!} />
+            <span class={typography({ class: "label", size: "large" })}>
+              <StyledName
+                name={user().username}
+                userId={(props.user ?? props.member?.user)?.id}
+                serverId={props.member?.id.server}
+                roleColour={user().colour}
+                roleId={
+                  props.member?.orderedRoles
+                    ?.filter((role) => role.colour)
+                    .at(-1)?.id
+                }
+              />
+            </span>
           </OverflowingText>
           <Show when={status()}>
             <Tooltip

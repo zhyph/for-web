@@ -36,8 +36,17 @@ const STYLE = `
   position: absolute; inset: -18%; width: 136%; height: 136%; max-width: none; max-height: none;
   pointer-events: none; z-index: 1;
 }
+/* effects are drawn for a 340x400 card: keep that scale and tile sideways on wider cards so particles never grow */
 .zc-effect { position: absolute; inset: 0; pointer-events: none; z-index: 2; border-radius: inherit;
-  background-size: cover; background-position: center; }
+  background-size: 340px 400px; background-repeat: repeat-x; background-position: center top; }
+input.zc-colour {
+  width: 28px; height: 28px; padding: 0; border: 2px solid var(--md-sys-color-outline-variant);
+  border-radius: 50%; background: none; cursor: pointer; transition: opacity .15s;
+}
+input.zc-colour::-webkit-color-swatch-wrapper { padding: 0; }
+input.zc-colour::-webkit-color-swatch { border: none; border-radius: 50%; }
+input.zc-colour::-moz-color-swatch { border: none; border-radius: 50%; }
+input.zc-colour.zc-off { opacity: .35; }
 @media (prefers-reduced-motion: reduce) {
   .zc-shimmer, .zc-role-gradient, .zc-role-holo, .zc-glow { animation: none; }
 }

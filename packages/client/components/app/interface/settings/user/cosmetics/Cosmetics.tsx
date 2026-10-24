@@ -1,4 +1,12 @@
-import { For, JSX, Show, createEffect, createSignal, on } from "solid-js";
+import {
+  For,
+  JSX,
+  Show,
+  createEffect,
+  createMemo,
+  createSignal,
+  on,
+} from "solid-js";
 
 import { Trans, useLingui } from "@lingui/solid/macro";
 import { css } from "styled-system/css";
@@ -15,6 +23,7 @@ import {
   cacheMemberStyle,
   cacheUserStyle,
   cosmeticItems,
+  fileUrl,
   itemUrl,
   loadItems,
   memberStyle,
@@ -106,21 +115,26 @@ export function Cosmetics() {
         </Trans>
       </Text>
 
-      {/* preview */}
+      {/* preview, shaped like the profile card (340px wide) so effects show as they will there */}
       <div
         class={css({
           position: "relative",
-          padding: "var(--gap-lg)",
+          width: "340px",
+          maxWidth: "100%",
+          height: "200px",
+          // room for the decoration, which reaches 18% past the avatar
+          padding: "24px",
           borderRadius: "var(--borderRadius-xl)",
+          border: "1px solid var(--md-sys-color-outline-variant)",
           overflow: "hidden",
           display: "flex",
-          alignItems: "center",
+          alignItems: "flex-end",
           gap: "var(--gap-lg)",
         })}
         style={{
           background: draft().theme
             ? `linear-gradient(180deg, ${draft().theme!.primary}, ${draft().theme!.accent})`
-            : "var(--md-sys-color-surface-container-low)",
+            : "var(--md-sys-color-surface-container-high)",
         }}
       >
         <Show when={itemUrl(draft().effect)}>
@@ -152,6 +166,7 @@ export function Cosmetics() {
           </Button>
           <ColourInput
             label={t`Top`}
+            inactive={!draft().theme}
             value={draft().theme?.primary ?? "#1e1b4b"}
             onChange={(primary) =>
               patch({
@@ -164,6 +179,7 @@ export function Cosmetics() {
           />
           <ColourInput
             label={t`Bottom`}
+            inactive={!draft().theme}
             value={draft().theme?.accent ?? "#be185d"}
             onChange={(accent) =>
               patch({
@@ -228,6 +244,7 @@ export function Cosmetics() {
           </Button>
           <ColourInput
             label={t`Colour`}
+            inactive={!name().colour}
             value={gradientStops(name().colour)[0]}
             onChange={(c) =>
               patch({
@@ -242,6 +259,7 @@ export function Cosmetics() {
           />
           <ColourInput
             label={t`Gradient to`}
+            inactive={!gradientStops(name().colour)[1]}
             value={gradientStops(name().colour)[1] ?? "#38bdf8"}
             onChange={(c) =>
               patch({
@@ -301,7 +319,7 @@ export function Cosmetics() {
 
       <Row align>
         <Button onPress={save}>
-          <Trans>Save</Trans>
+          <Trans>Save cosmetics</Trans>
         </Button>
         <Show when={saved()}>
           <Text class="label">
@@ -313,6 +331,12 @@ export function Cosmetics() {
         </Show>
       </Row>
 
+      <div
+        class={css({
+          height: "1px",
+          background: "var(--md-sys-color-outline-variant)",
+        })}
+      />
       <ServerProfiles />
       <Show when={me().privileged}>
         <CatalogAdmin />
@@ -361,6 +385,7 @@ function PreviewName(props: { style: Omit<UserStyle, "_id">; name: string }) {
 function ColourInput(props: {
   label: string;
   value: string;
+  inactive?: boolean;
   onChange: (value: string) => void;
 }) {
   return (
@@ -373,6 +398,7 @@ function ColourInput(props: {
     >
       <input
         type="color"
+        class={`zc-colour ${props.inactive ? "zc-off" : ""}`}
         value={props.value}
         onInput={(e) => props.onChange(e.currentTarget.value)}
       />
@@ -391,10 +417,11 @@ function ItemPicker(props: {
     ...BUILTIN[props.kind].map((b) => ({
       id: `builtin:${b.slug}`,
       name: b.name,
+      icon: b.icon,
     })),
     ...cosmeticItems()
       .filter((i: CosmeticItem) => i.kind === props.kind)
-      .map((i) => ({ id: i._id, name: i.name })),
+      .map((i) => ({ id: i._id, name: i.name, icon: undefined })),
   ];
   const tile = css({
     width: "84px",
@@ -409,6 +436,22 @@ function ItemPicker(props: {
     color: "var(--md-sys-color-on-surface)",
     cursor: "pointer",
     fontSize: "12px",
+  });
+  // same preview frame for "None" and the items, so every tile lines up
+  const frame = css({
+    width: "56px",
+    height: "56px",
+    flexShrink: 0,
+    position: "relative",
+    overflow: "hidden",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "var(--md-sys-color-on-surface-variant)",
+    background: "var(--md-sys-color-surface-container-highest)",
+  });
+  const frameShape = () => ({
+    "border-radius": props.kind === "Effect" ? "8px" : "50%",
   });
   return (
     <Column>
@@ -425,7 +468,9 @@ function ItemPicker(props: {
           }}
           onClick={() => props.onPick(undefined)}
         >
-          <Symbol>block</Symbol>
+          <span class={frame} style={frameShape()}>
+            <Symbol>block</Symbol>
+          </span>
           <Trans>None</Trans>
         </button>
         <For each={options()}>
@@ -441,27 +486,26 @@ function ItemPicker(props: {
               onClick={() => props.onPick(option.id)}
               title={option.name}
             >
-              <span
-                style={{
-                  width: "56px",
-                  height: "56px",
-                  position: "relative",
-                  "border-radius": props.kind === "Effect" ? "8px" : "50%",
-                  overflow: "hidden",
-                  background: "var(--md-sys-color-surface-container-highest)",
-                }}
-              >
-                <img
-                  src={itemUrl(option.id)}
-                  alt=""
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    width: "100%",
-                    height: "100%",
-                    "object-fit": "cover",
-                  }}
-                />
+              <span class={frame} style={frameShape()}>
+                {/* built-in effects are drawn for a whole card: an icon reads better than a 56px thumbnail */}
+                <Show
+                  when={option.icon}
+                  fallback={
+                    <img
+                      src={itemUrl(option.id)}
+                      alt=""
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        width: "100%",
+                        height: "100%",
+                        "object-fit": "cover",
+                      }}
+                    />
+                  }
+                >
+                  <Symbol>{option.icon}</Symbol>
+                </Show>
               </span>
               {option.name}
             </button>
@@ -485,6 +529,14 @@ function ServerProfiles() {
   const [bio, setBio] = createSignal("");
   createEffect(on(current, (style) => setBio(style?.bio ?? "")));
   const [banner, setBanner] = createSignal<File | null>();
+  // what the banner will look like after saving: the picked file, the current one, or none
+  const bannerPreview = createMemo<string | undefined>((previous) => {
+    if (previous?.startsWith("blob:")) URL.revokeObjectURL(previous);
+    const picked = banner();
+    if (picked) return URL.createObjectURL(picked);
+    if (picked === null) return;
+    return fileUrl(current()?.banner);
+  });
   const [status, setStatus] = createSignal<unknown>();
   let fileInput!: HTMLInputElement;
 
@@ -544,6 +596,19 @@ function ServerProfiles() {
           maxlength={190}
           onInput={(e) => setBio(e.currentTarget.value)}
         />
+        <Show when={bannerPreview()}>
+          <img
+            src={bannerPreview()}
+            alt=""
+            class={css({
+              width: "320px",
+              maxWidth: "100%",
+              aspectRatio: "3/1",
+              objectFit: "cover",
+              borderRadius: "var(--borderRadius-lg)",
+            })}
+          />
+        </Show>
         <Row align>
           <Button variant="tonal" onPress={() => fileInput.click()}>
             <Symbol>image</Symbol>
