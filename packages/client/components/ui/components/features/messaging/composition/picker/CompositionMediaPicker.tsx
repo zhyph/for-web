@@ -25,6 +25,7 @@ import { Row } from "@revolt/ui/components/layout";
 
 import { EmojiPicker } from "./EmojiPicker";
 import { GifPicker } from "./GifPicker";
+import { StickerPicker } from "./StickerPicker";
 
 export type MediaPickerProps = {
   ref: Setter<HTMLElement | undefined>;
@@ -61,7 +62,7 @@ export const CompositionMediaPickerContext = createContext(
 
 export function CompositionMediaPicker(props: Props) {
   const [anchor, setAnchor] = createSignal<HTMLElement>();
-  const [show, setShow] = createSignal<"gif" | "emoji">();
+  const [show, setShow] = createSignal<"gif" | "sticker" | "emoji">();
   let altRef: HTMLDivElement | undefined;
 
   return (
@@ -115,8 +116,8 @@ export function CompositionMediaPicker(props: Props) {
 function Picker(
   props: Pick<Props, "onMessage" | "onTextReplacement" | "channel"> & {
     anchor: Accessor<HTMLElement | undefined>;
-    show: Accessor<"gif" | "emoji" | undefined>;
-    setShow: Setter<"gif" | "emoji" | undefined>;
+    show: Accessor<"gif" | "sticker" | "emoji" | undefined>;
+    setShow: Setter<"gif" | "sticker" | "emoji" | undefined>;
   },
 ) {
   const device = useDevice();
@@ -186,6 +187,13 @@ function Picker(
           </Show>
 
           <Button
+            groupActive={props.show() === "sticker"}
+            onPress={() => props.setShow("sticker")}
+            group="connected"
+          >
+            Stickers
+          </Button>
+          <Button
             groupActive={props.show() === "emoji"}
             onPress={() => props.setShow("emoji")}
             group={
@@ -201,6 +209,9 @@ function Picker(
         <Switch fallback={<span>Not available yet.</span>}>
           <Match when={props.show() === "gif"}>
             <GifPicker />
+          </Match>
+          <Match when={props.show() === "sticker"}>
+            <StickerPicker />
           </Match>
           <Match when={props.show() === "emoji"}>
             <EmojiPicker channel={props.channel} />

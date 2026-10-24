@@ -19,6 +19,7 @@ import { styled } from "styled-system/jsx";
 import { useClient } from "@revolt/client";
 import { useDevice } from "@revolt/common";
 import { UnicodeEmoji } from "@revolt/markdown/emoji";
+import { isSticker } from "@revolt/markdown/emoji/stickers";
 import {
   UNICODE_EMOJI_PACK_PUA,
   UNICODE_ZWNJ,
@@ -71,6 +72,10 @@ type Item =
       text: string;
     };
 
+/** Custom emoji without stickers (they have their own tab) */
+const emojisOf = (server: Server) =>
+  server.emojis.filter((emoji) => !isSticker(emoji.id));
+
 const [hoveredItem, setHoveredItem] = createSignal<Item | null>(null);
 
 /**
@@ -110,7 +115,7 @@ export function EmojiPicker(props: { channel?: Channel }) {
     if (filterText) {
       return [
         ...servers().flatMap((server) =>
-          server.emojis
+          emojisOf(server)
             .filter((emoji) => emoji.name.toLowerCase().includes(filterText))
             .map((emoji) => ({ t: 2, emoji })),
         ),
@@ -129,7 +134,7 @@ export function EmojiPicker(props: { channel?: Channel }) {
     const items: Item[] = [];
 
     for (const server of servers()) {
-      const emojis = server.emojis;
+      const emojis = emojisOf(server);
 
       if (emojis.length === 0) continue;
 
@@ -195,7 +200,7 @@ export function EmojiPicker(props: { channel?: Channel }) {
           }}
         >
           <VirtualContainer
-            items={servers().filter((s) => s.emojis.length > 0)}
+            items={servers().filter((s) => emojisOf(s).length > 0)}
             scrollTarget={serverScrollTargetElement}
             itemSize={{ height: 40 }}
           >

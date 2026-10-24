@@ -15,6 +15,7 @@ import { Emoji } from "@revolt/markdown";
 const STYLE = `
 @keyframes zc-shimmer { to { background-position: -200% 0; } }
 @keyframes zc-glow { 50% { text-shadow: 0 0 6px currentColor, 0 0 12px currentColor; } }
+.zc-named { display: inline-flex; align-items: center; gap: 6px; vertical-align: bottom; max-width: 100%; }
 .zc-name { display: inline-block; }
 .zc-shimmer, .zc-role-gradient, .zc-role-holo {
   background-size: 200% 100% !important;
@@ -25,14 +26,15 @@ const STYLE = `
 .zc-glow { animation: zc-glow 2.4s ease-in-out infinite; text-shadow: 0 0 3px currentColor; }
 .zc-role-holo { background-image: linear-gradient(110deg, #ff9ad5, #9ad8ff, #fff3a8, #b69aff, #ff9ad5) !important; }
 .zc-tag {
-  display: inline-flex; align-items: center; gap: 2px; margin-inline-start: 6px; padding: 0 5px;
-  border-radius: 4px; font-size: 0.72em; font-weight: 700; line-height: 1.5; vertical-align: middle;
+  display: inline-flex; align-items: center; gap: 2px; padding: 0 5px; flex-shrink: 0;
+  border-radius: 4px; font-size: 0.72em; font-weight: 700; line-height: 1.5;
   background: var(--md-sys-color-surface-container-highest); color: var(--md-sys-color-on-surface);
   --emoji-size: 1.1em;
 }
 .zc-deco { position: relative; display: inline-block; line-height: 0; }
 .zc-deco > img.zc-deco-img {
-  position: absolute; inset: -18%; width: 136%; height: 136%; pointer-events: none; z-index: 1;
+  position: absolute; inset: -18%; width: 136%; height: 136%; max-width: none; max-height: none;
+  pointer-events: none; z-index: 1;
 }
 .zc-effect { position: absolute; inset: 0; pointer-events: none; z-index: 2; border-radius: inherit;
   background-size: cover; background-position: center; }
@@ -47,15 +49,33 @@ if (typeof document !== "undefined" && !document.getElementById("zc-css")) {
   document.head.appendChild(el);
 }
 
-/** System font stacks only: no third-party font requests */
-export const FONTS: Record<NameFont, string | undefined> = {
-  Default: undefined,
-  Serif: 'Georgia, "Times New Roman", serif',
-  Mono: 'ui-monospace, "JetBrains Mono", "Cascadia Code", monospace',
-  Rounded: 'ui-rounded, "SF Pro Rounded", "Varela Round", "Nunito", system-ui',
-  Handwritten: '"Segoe Print", "Bradley Hand", "Comic Sans MS", cursive',
-  Pixel: '"Press Start 2P", "VT323", "Courier New", monospace',
+/** Bundled OFL fonts (served from our origin), loaded the first time a name uses them */
+const FONT_FILES: Partial<Record<NameFont, () => Promise<unknown>>> = {
+  Serif: () => import("@fontsource/bitter/600.css"),
+  Mono: () => import("@fontsource/jetbrains-mono/600.css"),
+  Rounded: () => import("@fontsource/lexend/600.css"),
+  Handwritten: () => import("@fontsource/comic-neue/700.css"),
+  Pixel: () => import("@fontsource/press-start-2p/400.css"),
 };
+const loaded = new Set<NameFont>();
+
+const FAMILIES: Record<NameFont, string | undefined> = {
+  Default: undefined,
+  Serif: '"Bitter", Georgia, serif',
+  Mono: '"JetBrains Mono", monospace',
+  Rounded: '"Lexend", system-ui',
+  Handwritten: '"Comic Neue", cursive',
+  Pixel: '"Press Start 2P", monospace',
+};
+
+/** CSS font-family for a name font, loading its file on first use */
+export function fontFamily(font: NameFont = "Default") {
+  if (!loaded.has(font)) {
+    loaded.add(font);
+    void FONT_FILES[font]?.();
+  }
+  return FAMILIES[font];
+}
 
 /** Solid colour → a gradient of itself, so role "gradient" styles work with plain colours too */
 const asGradient = (colour: string) =>
@@ -91,11 +111,13 @@ export function StyledName(props: {
           : undefined;
 
   return (
-    <>
+    <span class="zc-named">
       <span
         class={`zc-name ${animated() ?? ""} ${style()?.effect === "Glow" ? "zc-glow" : ""}`}
         style={{
-          "font-family": FONTS[style()?.font ?? "Default"],
+          "font-family": fontFamily(style()?.font),
+          // the pixel font is wide; a smaller size keeps names on one line
+          "font-size": style()?.font === "Pixel" ? "0.7em" : undefined,
           ...(animated()
             ? {
                 "background-image":
@@ -118,7 +140,7 @@ export function StyledName(props: {
       <Show when={!props.noTag}>
         <ServerTag userId={props.userId} />
       </Show>
-    </>
+    </span>
   );
 }
 
