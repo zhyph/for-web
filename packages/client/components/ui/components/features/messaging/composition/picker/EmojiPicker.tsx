@@ -15,6 +15,7 @@ import { styled } from "styled-system/jsx";
 
 import { useClient } from "@revolt/client";
 import { UnicodeEmoji } from "@revolt/markdown/emoji";
+import { isSticker } from "@revolt/markdown/emoji/stickers";
 import { UNICODE_EMOJI_PACK_PUA } from "@revolt/markdown/emoji/UnicodeEmoji";
 import { useState } from "@revolt/state";
 import { Avatar, Ripple, TextField } from "@revolt/ui/components/design";
@@ -69,6 +70,10 @@ const COLUMNS = 9;
 
 const [hoveredItem, setHoveredItem] = createSignal<Item | null>(null);
 
+/** Custom emoji without stickers (they have their own tab) */
+const emojisOf = (server: Server) =>
+  server.emojis.filter((emoji) => !isSticker(emoji.id));
+
 export function EmojiPicker() {
   const client = useClient();
   const { ordering, settings } = useState();
@@ -84,13 +89,11 @@ export function EmojiPicker() {
 
     if (filterText) {
       return [
-        ...ordering
-          .orderedServers(client())
-          .flatMap((server) =>
-            server.emojis
-              .filter((emoji) => emoji.name.toLowerCase().includes(filterText))
-              .map((emoji) => ({ t: 2, emoji })),
-          ),
+        ...ordering.orderedServers(client()).flatMap((server) =>
+          emojisOf(server)
+            .filter((emoji) => emoji.name.toLowerCase().includes(filterText))
+            .map((emoji) => ({ t: 2, emoji })),
+        ),
         ...Object.entries(emojiMapping)
           .filter(([name]) => name.toLowerCase().includes(filterText))
           .map(([name, text]) => ({ t: 4, name, text })),
@@ -100,7 +103,7 @@ export function EmojiPicker() {
     const items: Item[] = [];
 
     for (const server of ordering.orderedServers(client())) {
-      const emojis = server.emojis;
+      const emojis = emojisOf(server);
 
       if (emojis.length === 0) continue;
 
@@ -167,7 +170,7 @@ export function EmojiPicker() {
           <VirtualContainer
             items={ordering
               .orderedServers(client())
-              .filter((s) => s.emojis.length > 0)}
+              .filter((s) => emojisOf(s).length > 0)}
             scrollTarget={serverScrollTargetElement}
             itemSize={{ height: 40 }}
           >

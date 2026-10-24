@@ -114,6 +114,9 @@ importers:
       '@fontsource/poppins':
         specifier: ^5.2.6
         version: 5.2.6
+      '@fontsource/press-start-2p':
+        specifier: ^5.3.0
+        version: 5.3.0
       '@fontsource/raleway':
         specifier: ^5.2.6
         version: 5.2.6
@@ -2134,6 +2137,9 @@ packages:
 
   '@fontsource/poppins@5.2.6':
     resolution: {integrity: sha512-NFr0121+vWCfzLDVvSZOzwAjRUaNj6QHA9gtUh/KHHoWf1Qn23EkwVFs63XZ6UtF5K1b3UNmCx77YEMGgV7BOQ==}
+
+  '@fontsource/press-start-2p@5.3.0':
+    resolution: {integrity: sha512-gxWFxdeDglPhEYSwEeooomcaFK8kSQYLQwVxfnOJeYRj2sPEHXjpVtFgEaYfqzOjuAJGrIcJOipu2KY5YkbyuQ==}
 
   '@fontsource/raleway@5.2.6':
     resolution: {integrity: sha512-ztY/2G0Axrjt3ObLWGEXDtZKad38Hpbn/Vk3TdBextTPiuN2i8pVQLRpjWmS9iX31O2JH3o5b80PsVvuiRGjJA==}
@@ -8556,6 +8562,8 @@ snapshots:
   '@fontsource/opendyslexic@5.2.5': {}
 
   '@fontsource/poppins@5.2.6': {}
+
+  '@fontsource/press-start-2p@5.3.0': {}
 
   '@fontsource/raleway@5.2.6': {}
 

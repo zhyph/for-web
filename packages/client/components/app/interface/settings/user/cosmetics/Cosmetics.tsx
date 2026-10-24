@@ -34,7 +34,7 @@ import {
   Text,
   TextField,
 } from "@revolt/ui";
-import { FONTS } from "@revolt/ui/components/features/cosmetics/Cosmetics";
+import { fontFamily } from "@revolt/ui/components/features/cosmetics/Cosmetics";
 import { Symbol } from "@revolt/ui/components/utils/Symbol";
 
 const FONT_NAMES: NameFont[] = [
@@ -192,7 +192,9 @@ export function Cosmetics() {
                   font,
                   {
                     title: (
-                      <span style={{ "font-family": FONTS[font] }}>{font}</span>
+                      <span style={{ "font-family": fontFamily(font) }}>
+                        {font}
+                      </span>
                     ),
                   },
                 ]),
@@ -338,7 +340,7 @@ function PreviewName(props: { style: Omit<UserStyle, "_id">; name: string }) {
       style={{
         "font-size": "1.4em",
         "font-weight": 600,
-        "font-family": FONTS[n()?.font ?? "Default"],
+        "font-family": fontFamily(n()?.font),
         ...(shimmer() || n()?.colour?.includes("gradient")
           ? {
               "background-image": n()?.colour?.includes("gradient")
