@@ -254,6 +254,8 @@ const ReactionBase = styled("div", {
     verticalAlign: "middle",
     padding: "var(--gap-md)",
     borderRadius: "var(--borderRadius-md)",
+    // every pill has the border so super reactions (which colour it) keep the same size
+    border: "1.5px solid transparent",
 
     transition: "var(--transitions-fast) all",
     fontWeight: 600,
@@ -279,7 +281,6 @@ const ReactionBase = styled("div", {
     // super reaction: gradient border over the normal fill, and a soft glow
     super: {
       true: {
-        border: "1.5px solid transparent",
         backgroundClip: "padding-box, border-box",
         backgroundOrigin: "border-box",
         boxShadow: "0 0 10px rgba(236, 72, 153, 0.35)",

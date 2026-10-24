@@ -52,7 +52,10 @@ export type CosmeticItem = {
 };
 
 /** Designs shipped with the client (public/cosmetics), referenced as `builtin:<slug>` */
-export const BUILTIN: Record<CosmeticKind, { slug: string; name: string }[]> = {
+export const BUILTIN: Record<
+  CosmeticKind,
+  { slug: string; name: string; icon?: string }[]
+> = {
   Decoration: [
     { slug: "aurora", name: "Aurora" },
     { slug: "neon", name: "Neon Pulse" },
@@ -64,11 +67,11 @@ export const BUILTIN: Record<CosmeticKind, { slug: string; name: string }[]> = {
     { slug: "halo", name: "Halo" },
   ],
   Effect: [
-    { slug: "starfield", name: "Starfield" },
-    { slug: "sakura", name: "Sakura" },
-    { slug: "rays", name: "Light Rays" },
-    { slug: "snow", name: "Snowfall" },
-    { slug: "bubbles", name: "Bubbles" },
+    { slug: "starfield", name: "Starfield", icon: "star" },
+    { slug: "sakura", name: "Sakura", icon: "local_florist" },
+    { slug: "rays", name: "Light Rays", icon: "wb_sunny" },
+    { slug: "snow", name: "Snowfall", icon: "ac_unit" },
+    { slug: "bubbles", name: "Bubbles", icon: "bubble_chart" },
   ],
 };
 

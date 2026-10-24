@@ -19,9 +19,12 @@ import {
   Symbol,
   Tooltip,
   typography,
-  Username,
   UserStatus,
 } from "@revolt/ui";
+import {
+  Decorated,
+  StyledName,
+} from "@revolt/ui/components/features/cosmetics/Cosmetics";
 
 interface Props {
   /**
@@ -384,23 +387,37 @@ function Member(props: {
               opacity: timedOut() && moderationPerms() ? 0.5 : 1,
             }}
           >
-            <Avatar
-              src={user().avatar}
-              size={32}
-              holepunch="bottom-right"
-              overlay={
-                <UserStatus.Graphic
-                  status={(props.user ?? props.member?.user)?.presence}
-                />
-              }
-            />
+            <Decorated userId={(props.user ?? props.member?.user)?.id}>
+              <Avatar
+                src={user().avatar}
+                size={32}
+                holepunch="bottom-right"
+                overlay={
+                  <UserStatus.Graphic
+                    status={(props.user ?? props.member?.user)?.presence}
+                  />
+                }
+              />
+            </Decorated>
           </div>
         }
       >
         <NameStatusStack>
           <OverflowingText>
             <Row align gap="xs">
-              <Username username={user().username} colour={user().colour!} />
+              <span class={typography({ class: "label", size: "large" })}>
+                <StyledName
+                  name={user().username}
+                  userId={(props.user ?? props.member?.user)?.id}
+                  serverId={props.member?.id.server}
+                  roleColour={user().colour}
+                  roleId={
+                    props.member?.orderedRoles
+                      ?.filter((role) => role.colour)
+                      .at(-1)?.id
+                  }
+                />
+              </span>
               <Show when={timedOut() && moderationPerms}>
                 <Tooltip
                   content={t`Timed out until ${props.member!.timeout!.toLocaleString()}`}

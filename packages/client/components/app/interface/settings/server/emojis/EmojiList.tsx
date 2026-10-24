@@ -167,6 +167,11 @@ export function EmojiList(props: { server: Server }) {
         </Column>
       </form>
 
+      <Show when={stickers().length}>
+        <Text class="title">
+          <Trans>Emojis</Trans>
+        </Text>
+      </Show>
       <List>
         <For each={emojis().toSorted((b, a) => a.id.localeCompare(b.id))}>
           {(emoji) => (

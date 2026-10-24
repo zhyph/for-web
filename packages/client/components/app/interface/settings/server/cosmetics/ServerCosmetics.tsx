@@ -15,6 +15,7 @@ import {
 import { forkApi, uploadFile } from "@revolt/client/forkApi";
 import { useError } from "@revolt/i18n";
 import { useInstance } from "@revolt/instance";
+import { Emoji } from "@revolt/markdown";
 import {
   Button,
   CategoryButton,
@@ -155,6 +156,15 @@ export function ServerCosmetics(props: { server: Server }) {
               maxlength={64}
               onInput={(e) => setTagEmoji(e.currentTarget.value)}
             />
+            <Show when={tag()}>
+              {/* how it shows next to names */}
+              <span class="zc-tag" title={t`Preview`}>
+                <Show when={tagEmoji().trim()}>
+                  <Emoji emoji={tagEmoji().trim()} />
+                </Show>
+                {tag()}
+              </span>
+            </Show>
             <Button
               isDisabled={!tag()}
               onPress={() =>
