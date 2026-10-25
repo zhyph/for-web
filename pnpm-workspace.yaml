@@ -18,6 +18,7 @@ overrides:
   "solid-js": "1.9.14"
 
 patchedDependencies:
+  '@livekit/track-processors@0.8.1': patches/@livekit__track-processors@0.8.1.patch
   livekit-client: patches/livekit-client.patch
 
 strictPeerDependencies: false

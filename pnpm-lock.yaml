@@ -9,6 +9,7 @@ overrides:
   solid-js: 1.9.14
 
 patchedDependencies:
+  '@livekit/track-processors@0.8.1': 65b40b46cfce95c2edfa14aceadb411fd5f69ed1537d3d17feae3f48e518adec
   livekit-client: aaa5857885c579bb42546763169fbc579a0428c99138d5b40a69a040c8a32959
 
 importers:
@@ -152,7 +153,7 @@ importers:
         version: 0.12.14(livekit-client@2.20.2(patch_hash=aaa5857885c579bb42546763169fbc579a0428c99138d5b40a69a040c8a32959)(@types/dom-mediacapture-record@1.0.22))(tslib@2.8.1)
       '@livekit/track-processors':
         specifier: 0.8.1
-        version: 0.8.1(@types/dom-mediacapture-transform@0.1.12)(livekit-client@2.20.2(patch_hash=aaa5857885c579bb42546763169fbc579a0428c99138d5b40a69a040c8a32959)(@types/dom-mediacapture-record@1.0.22))
+        version: 0.8.1(patch_hash=65b40b46cfce95c2edfa14aceadb411fd5f69ed1537d3d17feae3f48e518adec)(@types/dom-mediacapture-transform@0.1.12)(livekit-client@2.20.2(patch_hash=aaa5857885c579bb42546763169fbc579a0428c99138d5b40a69a040c8a32959)(@types/dom-mediacapture-record@1.0.22))
       '@material-design-icons/svg':
         specifier: ^0.14.15
         version: 0.14.15
@@ -8875,7 +8876,7 @@ snapshots:
     dependencies:
       '@bufbuild/protobuf': 1.10.1
 
-  '@livekit/track-processors@0.8.1(@types/dom-mediacapture-transform@0.1.12)(livekit-client@2.20.2(patch_hash=aaa5857885c579bb42546763169fbc579a0428c99138d5b40a69a040c8a32959)(@types/dom-mediacapture-record@1.0.22))':
+  '@livekit/track-processors@0.8.1(patch_hash=65b40b46cfce95c2edfa14aceadb411fd5f69ed1537d3d17feae3f48e518adec)(@types/dom-mediacapture-transform@0.1.12)(livekit-client@2.20.2(patch_hash=aaa5857885c579bb42546763169fbc579a0428c99138d5b40a69a040c8a32959)(@types/dom-mediacapture-record@1.0.22))':
     dependencies:
       '@mediapipe/tasks-vision': 0.10.14
       '@types/dom-mediacapture-transform': 0.1.12
