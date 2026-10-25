@@ -1,0 +1,120 @@
+diff --git a/dist/index.mjs b/dist/index.mjs
+index a3a9ab05059b4434eb840804ce946307429c9d9a..7a3d2fee1d10135d575310a9d7962ac4a69da512 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -534,7 +534,9 @@ var blurFragmentShader = glsl`#version 300 es
+     float sigma = u_radius;
+     float twoSigmaSq = 2.0 * sigma * sigma;
+     float totalWeight = 0.0;
+-    vec3 result = vec3(0.0);
++    vec3 color = vec3(0.0);
++    vec3 plain = vec3(0.0);
++    float weightSum = 0.0;
+     const int MAX_SAMPLES = 16;
+     int radius = int(min(float(MAX_SAMPLES), ceil(u_radius)));
+ 
+@@ -543,11 +545,15 @@ var blurFragmentShader = glsl`#version 300 es
+       if (abs(offset) > float(radius)) continue;
+       float weight = exp(-(offset * offset) / twoSigmaSq);
+       vec2 sampleCoord = texCoords + u_direction * u_texelSize * offset;
+-      result += texture(u_texture, sampleCoord).rgb * weight;
++      vec4 s = texture(u_texture, sampleCoord);
++      color += s.rgb * s.a * weight;
++      weightSum += s.a * weight;
++      plain += s.rgb * weight;
+       totalWeight += weight;
+     }
+ 
+-    fragColor = vec4(result / totalWeight, 1.0);
++    // no background in reach (inside the person, never shown): plain blur keeps upsampling clean
++    fragColor = vec4(weightSum > 0.0001 ? color / weightSum : plain / totalWeight, weightSum / totalWeight);
+   }
+ `;
+ function createBlurProgram(gl) {
+@@ -664,7 +670,7 @@ var compositeFragmentShader = glsl`#version 300 es
+     } else {
+       vec4 bgTex = texture(background, texCoords);
+ 
+-      float maskVal = texture(mask, texCoords).r;
++      float maskVal = 1.0 - texture(mask, texCoords).r;
+ 
+       // Compute screen-space gradient to detect edge sharpness
+       float grad = length(vec2(dFdx(maskVal), dFdy(maskVal)));
+@@ -675,8 +681,7 @@ var compositeFragmentShader = glsl`#version 300 es
+       float smoothAlpha = smoothstep(0.5 - grad * edgeSoftness, 0.5 + grad * edgeSoftness, maskVal);
+ 
+       // Optional: preserve frame alpha, or override as fully opaque
+-      vec4 blended = mix(bgTex, vec4(frameTex.rgb, 1.0), 1.0 - smoothAlpha);
+-      fragColor = blended;
++      fragColor = vec4(mix(bgTex.rgb, frameTex.rgb, 1.0 - smoothAlpha), 1.0);
+     }
+   
+   }
+@@ -728,8 +733,11 @@ function createDownSampler(gl, width, height) {
+       precision mediump float;
+       varying vec2 v_uv;
+       uniform sampler2D u_texture;
++      uniform sampler2D u_mask;
+       void main() {
+-        gl_FragColor = texture2D(u_texture, v_uv);
++        // weight = background-ness, so the blur never averages the person in (halo)
++        float w = smoothstep(0.5, 1.0, 1.0 - texture2D(u_mask, v_uv).r);
++        gl_FragColor = vec4(texture2D(u_texture, v_uv).rgb, w);
+       }
+     `;
+   const vertShader = createShader(gl, gl.VERTEX_SHADER, vertexSource);
+@@ -737,6 +745,7 @@ function createDownSampler(gl, width, height) {
+   const program = createProgram(gl, vertShader, fragShader);
+   const uniforms = {
+     texture: gl.getUniformLocation(program, "u_texture"),
++    mask: gl.getUniformLocation(program, "u_mask"),
+     position: gl.getAttribLocation(program, "position")
+   };
+   return {
+@@ -756,6 +765,7 @@ function applyDownsampling(gl, inputTexture, downSampler, vertexBuffer, width, h
+   gl.activeTexture(gl.TEXTURE0);
+   gl.bindTexture(gl.TEXTURE_2D, inputTexture);
+   gl.uniform1i(downSampler.uniforms.texture, 0);
++  gl.uniform1i(downSampler.uniforms.mask, 2);
+   gl.drawArrays(gl.TRIANGLES, 0, 6);
+   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+   return downSampler.texture;
+@@ -775,8 +785,7 @@ var setupWebGL = (canvas) => {
+     log3.error("Failed to create WebGL context");
+     return void 0;
+   }
+-  gl.enable(gl.BLEND);
+-  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
++  gl.disable(gl.BLEND);
+   const composite = createCompositeProgram(gl);
+   const compositeProgram = composite.program;
+   const positionLocation = composite.attribLocations.position;
+@@ -863,6 +872,8 @@ var setupWebGL = (canvas) => {
+     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, frame);
+     let backgroundTexture = bgTexture;
+     if (blurRadius) {
++      gl.activeTexture(gl.TEXTURE2);
++      gl.bindTexture(gl.TEXTURE_2D, finalMaskTextures[readMaskIndex]);
+       const downSampledFrameTexture = applyDownsampling(
+         gl,
+         frameTexture,
+@@ -1070,8 +1081,8 @@ var BackgroundProcessor = class extends VideoTransformer {
+       },
+       canvas: this.canvas,
+       runningMode: "VIDEO",
+-      outputCategoryMask: true,
+-      outputConfidenceMasks: false
++      outputCategoryMask: false,
++      outputConfidenceMasks: true
+     });
+     if ((_e = this.options) == null ? void 0 : _e.imagePath) {
+       await this.loadAndSetBackground(this.options.imagePath).catch(
+@@ -1150,7 +1161,7 @@ var BackgroundProcessor = class extends VideoTransformer {
+           (_a2 = this.imageSegmenter) == null ? void 0 : _a2.segmentForVideo(frame, segmentationStartTimeMs, (result) => {
+             this.segmentationTimeMs = performance.now() - segmentationStartTimeMs;
+             this.segmentationResults = result;
+-            this.updateMask(result.categoryMask);
++            this.updateMask(result.confidenceMasks && result.confidenceMasks[0]);
+             result.close();
+             resolve();
+           });

@@ -23,6 +23,7 @@ overrides:
   "svelte-dnd-action": "^0.9.79"
 
 patchedDependencies:
+  '@livekit/track-processors@0.8.1': patches/@livekit__track-processors@0.8.1.patch
   livekit-client: patches/livekit-client.patch
 
 strictPeerDependencies: false
